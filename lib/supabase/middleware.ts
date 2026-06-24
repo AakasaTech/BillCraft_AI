@@ -2,11 +2,16 @@ import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
+  // Skip auth checks when Supabase env vars are not yet configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -33,7 +38,16 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users away from protected routes
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
-  const isPublicRoute = pathname === '/' || isAuthRoute || pathname.startsWith('/api/webhooks');
+  const isPublicRoute =
+    pathname === '/' ||
+    isAuthRoute ||
+    pathname.startsWith('/p/')         ||  // public invoice view
+    pathname.startsWith('/e/')         ||  // public estimate view
+    pathname.startsWith('/portal/')    ||  // client portal + login
+    pathname.startsWith('/api/p/')     ||  // public invoice PDF
+    pathname.startsWith('/api/e/')     ||  // public estimate PDF + respond
+    pathname.startsWith('/api/portal') ||  // portal OTP routes
+    pathname.startsWith('/api/webhooks');
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();

@@ -11,6 +11,13 @@ export type InvoiceStatus =
   | 'overdue'
   | 'cancelled'
   | 'void';
+export type EstimateStatus =
+  | 'draft'
+  | 'sent'
+  | 'viewed'
+  | 'accepted'
+  | 'declined'
+  | 'expired';
 export type TaxType = 'vat' | 'gst' | 'sales_tax' | 'none';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type PaymentMethod =
@@ -54,8 +61,23 @@ export type AuditAction =
   | 'cancel'
   | 'login'
   | 'logout';
+export type ExpenseCategory =
+  | 'software'
+  | 'marketing'
+  | 'salaries'
+  | 'office'
+  | 'travel'
+  | 'professional_services'
+  | 'equipment'
+  | 'utilities'
+  | 'other';
 
 // ─── Row types ────────────────────────────────────────────────────────────────
+
+export interface OrgPaymentInstruction {
+  name:    string;
+  content: string;
+}
 
 export interface Organization {
   id: string;
@@ -76,6 +98,13 @@ export interface Organization {
   invoice_prefix: string;
   invoice_number_format: string;
   next_invoice_number: number;
+  payment_instructions: OrgPaymentInstruction[];
+  trial_ends_at: string | null;
+  auto_reminders_enabled: boolean;
+  reminder_offsets: number[];
+  late_fee_enabled: boolean;
+  late_fee_percentage: number;
+  late_fee_after_days: number;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -113,6 +142,9 @@ export interface Client {
   preferred_language: string | null;
   tax_registration_number: string | null;
   notes: string | null;
+  portal_token: string | null;
+  portal_otp: string | null;
+  portal_otp_expires_at: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -146,6 +178,9 @@ export interface Invoice {
   sent_at: string | null;
   viewed_at: string | null;
   paid_at: string | null;
+  last_reminder_sent_at: string | null;
+  late_fee_applied_at: string | null;
+  share_token: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -244,6 +279,147 @@ export interface AiRequest {
   created_at: string;
 }
 
+export interface Invitation {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: UserRole;
+  token: string;
+  invited_by: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+  deleted_at: string | null;
+}
+
+export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface RecurringInvoiceItem {
+  description: string;
+  quantity:    number;
+  unit_price:  number;
+}
+
+export interface RecurringInvoice {
+  id:                   string;
+  organization_id:      string;
+  client_id:            string;
+  title:                string;
+  frequency:            RecurringFrequency;
+  next_issue_date:      string;
+  due_days:             number;
+  currency:             string;
+  tax_type:             TaxType;
+  tax_rate:             number;
+  discount_amount:      number;
+  notes:                string | null;
+  payment_instructions: string | null;
+  items:                RecurringInvoiceItem[];
+  is_active:            boolean;
+  last_issued_at:       string | null;
+  total_issued:         number;
+  created_at:           string;
+  updated_at:           string;
+  deleted_at:           string | null;
+}
+
+export interface Expense {
+  id: string;
+  organization_id: string;
+  created_by: string | null;
+  date: string;
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  currency: string;
+  vendor: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface InvoiceTemplate {
+  id: string;
+  organization_id: string;
+  created_by: string | null;
+  name: string;
+  currency: string;
+  tax_type: TaxType;
+  tax_rate: number;
+  discount_amount: number;
+  due_days: number | null;
+  notes: string | null;
+  payment_instructions: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface InvoiceTemplateItem {
+  id: string;
+  template_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  sort_order: number;
+}
+
+export interface Estimate {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  created_by: string | null;
+  estimate_number: string;
+  status: EstimateStatus;
+  issue_date: string;
+  expiry_date: string | null;
+  currency: string;
+  subtotal: number;
+  discount_amount: number;
+  tax_type: TaxType;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  notes: string | null;
+  terms: string | null;
+  sent_at: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  response_note: string | null;
+  share_token: string | null;
+  converted_invoice_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface EstimateItem {
+  id: string;
+  estimate_id: string;
+  organization_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  total: number;
+  sort_order: number;
+}
+
+export interface Product {
+  id: string;
+  organization_id: string;
+  created_by: string | null;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  currency: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
 export interface AuditLog {
   id: string;
   organization_id: string;
@@ -256,6 +432,18 @@ export interface AuditLog {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
+}
+
+export type EmailTemplateType = 'invoice' | 'reminder' | 'estimate';
+
+export interface EmailTemplate {
+  id:              string;
+  organization_id: string;
+  type:            EmailTemplateType;
+  subject:         string;
+  body:            string;
+  created_at:      string;
+  updated_at:      string;
 }
 
 // ─── Joined / derived types ───────────────────────────────────────────────────
@@ -284,11 +472,23 @@ export type Database = {
       email_logs: { Row: EmailLog; Insert: Omit<EmailLog, 'id' | 'created_at'>; Update: Partial<EmailLog> };
       ai_requests: { Row: AiRequest; Insert: Omit<AiRequest, 'id' | 'total_tokens' | 'created_at'>; Update: Partial<AiRequest> };
       audit_logs: { Row: AuditLog; Insert: Omit<AuditLog, 'id' | 'created_at'>; Update: never };
+      invitations: { Row: Invitation; Insert: Omit<Invitation, 'id' | 'created_at'>; Update: Partial<Invitation> };
+      recurring_invoices: { Row: RecurringInvoice; Insert: Omit<RecurringInvoice, 'id' | 'created_at' | 'updated_at'>; Update: Partial<RecurringInvoice> };
+      expenses: { Row: Expense; Insert: Omit<Expense, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Expense> };
+      invoice_templates: { Row: InvoiceTemplate; Insert: Omit<InvoiceTemplate, 'id' | 'created_at' | 'updated_at'>; Update: Partial<InvoiceTemplate> };
+      invoice_template_items: { Row: InvoiceTemplateItem; Insert: Omit<InvoiceTemplateItem, 'id'>; Update: Partial<InvoiceTemplateItem> };
+      products: { Row: Product; Insert: Omit<Product, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Product> };
+      estimates: { Row: Estimate; Insert: Omit<Estimate, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Estimate> };
+      estimate_items: { Row: EstimateItem; Insert: Omit<EstimateItem, 'id'>; Update: Partial<EstimateItem> };
+      email_templates: { Row: EmailTemplate; Insert: Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at'>; Update: Partial<EmailTemplate> };
     };
     Views: Record<string, never>;
     Functions: {
-      next_invoice_number: { Args: { p_org_id: string }; Returns: string };
-      get_user_org_id: { Args: Record<string, never>; Returns: string | null };
+      next_invoice_number:  { Args: { p_org_id: string }; Returns: string };
+      peek_invoice_number:  { Args: { p_org_id: string }; Returns: string };
+      next_estimate_number: { Args: { p_org_id: string }; Returns: string };
+      peek_estimate_number: { Args: { p_org_id: string }; Returns: string };
+      get_user_org_id:      { Args: Record<string, never>; Returns: string | null };
     };
     Enums: {
       user_role: UserRole;

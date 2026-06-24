@@ -4,7 +4,7 @@ import {
   Globe,
   Users,
   FileDown,
-  CreditCard,
+  Wallet,
   BarChart3,
   ArrowRight,
   Check,
@@ -39,10 +39,10 @@ const features = [
       'Professional, branded PDF invoices generated instantly. Attach to email or share a secure link.',
   },
   {
-    icon: CreditCard,
-    title: 'Stripe Payment Links',
+    icon: Wallet,
+    title: 'Payment & Expense Tracking',
     description:
-      'Get paid faster. Every invoice includes a Stripe payment link your clients can pay with a card.',
+      'Record payments, track outstanding balances, log business expenses, and generate P&L reports.',
   },
   {
     icon: BarChart3,
@@ -56,56 +56,65 @@ const features = [
 
 const plans = [
   {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
+    name: 'Basic',
+    price: '$9',
+    period: 'per month',
+    annual: '$79 / year — save 27%',
     description: 'For freelancers just getting started.',
     features: [
-      '3 invoices per month',
-      '1 client seat',
-      'AI invoice generation',
-      'PDF download',
-      'Email delivery',
+      '5 clients',
+      '20 invoices per month',
+      'PDF download & email',
+      'Payment tracking',
+      'Basic support',
     ],
-    cta: 'Get started free',
+    cta: 'Start free trial',
     href: '/register',
     highlighted: false,
+    badge: null,
   },
   {
     name: 'Pro',
     price: '$19',
     period: 'per month',
+    annual: '$190 / year — save 17%',
     description: 'For active freelancers and solo consultants.',
     features: [
-      'Unlimited invoices',
       'Unlimited clients',
+      'Unlimited invoices',
       'AI invoice generation',
-      'Stripe payment links',
-      'Multi-currency',
+      'Expense tracking & P&L reports',
+      'Recurring invoices',
+      'Invoice templates',
+      'Multi-currency support',
       'PDF branded with your logo',
       'Email delivery + tracking',
       'Overdue reminders',
+      'Revenue analytics',
     ],
     cta: 'Start free trial',
-    href: '/register?plan=pro',
+    href: '/register',
     highlighted: true,
+    badge: 'Most popular',
   },
   {
     name: 'Agency',
-    price: '$49',
+    price: '$39',
     period: 'per month',
-    description: 'For agencies billing multiple clients.',
+    annual: '$390 / year — save 17%',
+    description: 'For agencies and teams billing multiple clients.',
     features: [
       'Everything in Pro',
-      'Up to 5 team seats',
-      'Multiple brand profiles',
-      'Priority support',
+      'Multiple team members',
+      'Multi-org management',
+      'White-label PDFs',
       'API access',
-      'Audit logs',
+      'Dedicated support',
     ],
     cta: 'Start free trial',
-    href: '/register?plan=agency',
+    href: '/register',
     highlighted: false,
+    badge: null,
   },
 ];
 
@@ -128,7 +137,7 @@ const steps = [
     number: '03',
     title: 'Review, send, get paid',
     description:
-      'Edit if needed, send the invoice by email with a Stripe payment link included.',
+      'Edit if needed, then send the invoice by email or share a secure link with your client.',
   },
 ];
 
@@ -166,7 +175,7 @@ export default function LandingPage() {
               href="/register"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Get started free
+              Start free trial
             </Link>
           </div>
         </nav>
@@ -195,14 +204,14 @@ export default function LandingPage() {
               <span className="text-muted-foreground">not hours.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Describe the work in plain English. BillCraft AI extracts the client, line items, currency, and taxes — then generates a professional PDF with a Stripe payment link.
+              Describe the work in plain English. BillCraft AI extracts the client, line items, currency, and taxes — then generates a professional PDF ready to share with your client.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:shadow-xl"
               >
-                Start for free
+                Start 2-month free trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -337,7 +346,7 @@ export default function LandingPage() {
                 Simple, transparent pricing
               </h2>
               <p className="mt-4 text-muted-foreground">
-                Start free. Upgrade when you&apos;re ready.
+                2-month free trial on every account — no credit card required.
               </p>
             </div>
             <div className="mt-16 grid gap-6 sm:grid-cols-3">
@@ -350,9 +359,9 @@ export default function LandingPage() {
                       : 'border-border bg-card'
                   }`}
                 >
-                  {plan.highlighted && (
+                  {plan.badge && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-primary-foreground px-4 py-0.5 text-xs font-semibold text-primary">
-                      Most popular
+                      {plan.badge}
                     </div>
                   )}
                   <div>
@@ -363,6 +372,11 @@ export default function LandingPage() {
                         / {plan.period}
                       </span>
                     </div>
+                    {plan.annual && (
+                      <p className={`mt-1 text-xs ${plan.highlighted ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                        or {plan.annual}
+                      </p>
+                    )}
                     <p className={`mt-2 text-sm ${plan.highlighted ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                       {plan.description}
                     </p>
@@ -388,6 +402,9 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+            <p className="mt-8 text-center text-xs text-muted-foreground">
+              All plans include a 2-month free trial — no credit card required. Upgrade or cancel any time.
+            </p>
           </div>
         </section>
 
@@ -397,13 +414,13 @@ export default function LandingPage() {
             Ready to invoice smarter?
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Free forever for up to 3 invoices per month. No credit card required.
+            2 months free — no credit card required. Then from $9/mo. No contracts, cancel any time.
           </p>
           <Link
             href="/register"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-primary-foreground shadow-lg hover:bg-primary/90 transition-all"
           >
-            Create your free account
+            Start your free trial
             <ArrowRight className="h-4 w-4" />
           </Link>
         </section>

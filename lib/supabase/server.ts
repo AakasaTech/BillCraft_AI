@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient as createRawClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database';
 
@@ -27,25 +28,13 @@ export async function createClient() {
   );
 }
 
-export async function createServiceClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient<Database>(
+// Service client uses the raw supabase-js client with the service role key.
+// @supabase/ssr would inject the user's cookie JWT and override the service role,
+// defeating RLS bypass. The raw client sends only the service role JWT.
+export function createServiceClient() {
+  return createRawClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          } catch {}
-        },
-      },
-    },
+    { auth: { autoRefreshToken: false, persistSession: false } }
   );
 }
