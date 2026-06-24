@@ -1,26 +1,22 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
   subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    default: 'BillCraft AI — Invoice in seconds',
+    default: 'BillCraft AI — Intelligent Billing for Modern Businesses',
     template: '%s | BillCraft AI',
   },
   description:
-    'Turn a sentence into a professional invoice. AI-powered invoicing for freelancers and agencies.',
+    'Smarter Billing. Stronger Business. AI-powered invoicing for freelancers and agencies.',
   keywords: ['invoicing', 'AI', 'freelancer', 'billing', 'invoice generator'],
   openGraph: {
     type: 'website',
@@ -37,11 +33,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}
