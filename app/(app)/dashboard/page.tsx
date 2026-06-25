@@ -309,7 +309,7 @@ export default async function DashboardPage() {
               <ClipboardList className="mr-2 h-4 w-4" /> New estimate
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="bc-btn-primary text-white border-0">
             <Link href="/invoices/new">
               <PlusIcon className="mr-2 h-4 w-4" /> New invoice
             </Link>
@@ -329,7 +329,7 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(thisMonthRevenue, currency)}</div>
             {trendPct !== null ? (
-              <p className={`mt-1 flex items-center gap-1 text-xs font-medium ${trendUp ? 'text-green-600' : 'text-destructive'}`}>
+              <p className={`mt-1 flex items-center gap-1 text-xs font-medium ${trendUp ? 'text-[var(--success)]' : 'text-destructive'}`}>
                 {trendUp
                   ? <TrendingUp className="h-3 w-3" />
                   : <TrendingDown className="h-3 w-3" />}

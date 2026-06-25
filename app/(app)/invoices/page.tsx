@@ -4,7 +4,11 @@ import { InvoicesTable, type InvoiceRow } from '@/components/invoices/invoices-t
 
 export const metadata = { title: 'Invoices — BillCraft AI' }
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -37,13 +41,15 @@ export default async function InvoicesPage() {
     client_name:    (inv.clients as unknown as { name: string } | null)?.name ?? 'Unknown client',
   }))
 
+  const { q } = await searchParams
+
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Invoices</h1>
         <p className="text-sm text-muted-foreground">Create, manage, and track all your invoices.</p>
       </div>
-      <InvoicesTable invoices={invoices} />
+      <InvoicesTable invoices={invoices} defaultSearch={q ?? ''} />
     </div>
   )
 }

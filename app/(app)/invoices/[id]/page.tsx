@@ -194,7 +194,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           </div>
           {inv.amount_paid > 0 && (
             <>
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-[var(--success)]">
                 <span>Amount paid</span>
                 <span>−{formatCurrency(inv.amount_paid, inv.currency)}</span>
               </div>

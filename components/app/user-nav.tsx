@@ -28,7 +28,7 @@ export function UserNav({ name, email, initials }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Avatar className="h-7 w-7">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            <AvatarFallback className="text-xs bg-[#1D8CFF] text-white font-semibold">{initials}</AvatarFallback>
           </Avatar>
           <span className="hidden text-sm font-medium sm:block max-w-32 truncate">{name}</span>
         </button>

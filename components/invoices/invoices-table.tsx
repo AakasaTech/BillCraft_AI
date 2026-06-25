@@ -34,8 +34,8 @@ const STATUS_TABS = [
 
 const VOIDABLE = new Set(['sent', 'viewed', 'partial', 'overdue'])
 
-export function InvoicesTable({ invoices }: { invoices: InvoiceRow[] }) {
-  const [search,   setSearch]   = useState('')
+export function InvoicesTable({ invoices, defaultSearch = '' }: { invoices: InvoiceRow[]; defaultSearch?: string }) {
+  const [search,   setSearch]   = useState(defaultSearch)
   const [tab,      setTab]      = useState('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
@@ -133,7 +133,7 @@ export function InvoicesTable({ invoices }: { invoices: InvoiceRow[] }) {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
-        <Button asChild>
+        <Button asChild className="bc-btn-primary text-white border-0">
           <Link href="/invoices/new">
             <PlusIcon className="mr-2 h-4 w-4" />
             New invoice

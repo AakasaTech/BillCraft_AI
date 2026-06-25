@@ -127,7 +127,7 @@ export function EmailTemplateEditor({ type, saved, canEdit }: Props) {
 
       {/* Feedback */}
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {ok    && <p className="text-sm text-green-600">Saved successfully.</p>}
+      {ok    && <p className="text-sm text-[var(--success)]">Saved successfully.</p>}
 
       {/* Actions */}
       {canEdit && (

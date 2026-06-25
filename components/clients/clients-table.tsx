@@ -77,7 +77,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
-        <Button onClick={() => setCreateOpen(true)}>
+        <Button onClick={() => setCreateOpen(true)} className="bc-btn-primary text-white border-0">
           <PlusIcon className="mr-2 h-4 w-4" />
           New client
         </Button>
