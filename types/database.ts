@@ -100,6 +100,8 @@ export interface Organization {
   next_invoice_number: number;
   payment_instructions: OrgPaymentInstruction[];
   trial_ends_at: string | null;
+  freepass_plan: string | null;
+  freepass_until: string | null;
   auto_reminders_enabled: boolean;
   reminder_offsets: number[];
   late_fee_enabled: boolean;
@@ -142,6 +144,7 @@ export interface Client {
   preferred_language: string | null;
   tax_registration_number: string | null;
   notes: string | null;
+  cc_emails: string[];
   portal_token: string | null;
   portal_otp: string | null;
   portal_otp_expires_at: string | null;

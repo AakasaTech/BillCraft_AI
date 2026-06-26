@@ -16,6 +16,7 @@ export const clientSchema = z.object({
   preferred_currency:     optionalString(3),
   tax_registration_number: optionalString(100),
   notes:                  optionalString(1000),
+  cc_emails:              z.array(z.string().email('Invalid CC email')).optional().default([]),
 })
 
 export type ClientFormData = z.infer<typeof clientSchema>

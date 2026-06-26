@@ -49,6 +49,7 @@ erDiagram
         varchar preferred_language
         varchar tax_registration_number
         text notes
+        jsonb cc_emails
         timestamptz created_at
         timestamptz updated_at
         timestamptz deleted_at

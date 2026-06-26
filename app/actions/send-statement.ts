@@ -1,8 +1,8 @@
 'use server'
 
 import { createElement } from 'react'
-import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
 import type { Client, Organization, Payment } from '@/types/database'
 import type { StatementEntry } from '@/lib/pdf/statement-pdf'
 
@@ -25,8 +25,9 @@ export async function sendStatementAction(
   from: string,
   to:   string,
 ): Promise<ActionResult> {
-  if (!process.env.RESEND_API_KEY)    return { error: 'Email sending is not configured.' }
-  if (!process.env.RESEND_FROM_EMAIL) return { error: 'Sender email is not configured.' }
+  if (!isEmailConfigured()) return { error: 'Email sending is not configured.' }
+  const fromEmail = getEmailFrom()
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -162,23 +163,18 @@ export async function sendStatementAction(
 
   const text = `Account Statement from ${org.name}\n${fmtDate(from)} – ${fmtDate(to)}\n\nTotal charged: ${fmt(totalCharged, currency)}\nTotal paid: ${fmt(totalPaid, currency)}\nOutstanding: ${fmt(outstanding, currency)}\n\nPlease find the full statement attached as a PDF.`
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
-
   const filename = `statement-${client.name.replace(/\s+/g, '-')}-${from}-${to}.pdf`
 
-  const { error: sendError } = await resend.emails.send({
-    from:        process.env.RESEND_FROM_EMAIL,
-    to:          client.email,
+  const { error: sendError } = await sendEmail({
+    from:    fromEmail,
+    to:      client.email,
     subject,
     html,
     text,
-    attachments: [{
-      filename,
-      content: Buffer.from(pdfBuffer).toString('base64'),
-    }],
+    attachments: [{ filename, content: Buffer.from(pdfBuffer).toString('base64') }],
   })
 
-  if (sendError) return { error: sendError.message }
+  if (sendError) return { error: sendError }
 
   return { success: true }
 }

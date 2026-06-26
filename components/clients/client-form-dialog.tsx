@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { clientSchema, type ClientFormData } from '@/lib/validations/clients'
 import { createClientAction, updateClientAction } from '@/app/actions/clients'
@@ -25,6 +25,7 @@ export type ClientEditTarget = Pick<
   | 'preferred_currency'
   | 'tax_registration_number'
   | 'notes'
+  | 'cc_emails'
 >
 
 import { Button } from '@/components/ui/button'
@@ -65,6 +66,96 @@ const defaultValues: ClientFormData = {
   preferred_currency: '',
   tax_registration_number: '',
   notes: '',
+  cc_emails: [],
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
+function CCEmailsInput({
+  value,
+  onChange,
+  error,
+}: {
+  value: string[]
+  onChange: (v: string[]) => void
+  error?: string
+}) {
+  const [input, setInput] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function addEmail() {
+    const trimmed = input.trim().replace(/,+$/, '')
+    if (!trimmed) return
+    if (!isValidEmail(trimmed)) {
+      toast.error('Invalid email address')
+      return
+    }
+    if (value.includes(trimmed)) {
+      setInput('')
+      return
+    }
+    onChange([...value, trimmed])
+    setInput('')
+  }
+
+  function removeEmail(email: string) {
+    onChange(value.filter((e) => e !== email))
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addEmail()
+    } else if (e.key === 'Backspace' && input === '' && value.length > 0) {
+      onChange(value.slice(0, -1))
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Label>CC emails</Label>
+      <div
+        className="flex min-h-10 flex-wrap gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {value.map((email) => (
+          <span
+            key={email}
+            className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+          >
+            {email}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); removeEmail(email) }}
+              className="ml-0.5 rounded-sm opacity-60 hover:opacity-100 focus:outline-none"
+              aria-label={`Remove ${email}`}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          type="email"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={addEmail}
+          placeholder={value.length === 0 ? 'cc@example.com, press Enter to add' : ''}
+          className="min-w-32 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+        />
+      </div>
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Invoices and reminders will be CC'd to these addresses.
+        </p>
+      )}
+    </div>
+  )
 }
 
 export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialogProps) {
@@ -92,6 +183,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
         preferred_currency:      client.preferred_currency ?? '',
         tax_registration_number: client.tax_registration_number ?? '',
         notes:                   client.notes ?? '',
+        cc_emails:               client.cc_emails ?? [],
       })
     } else {
       form.reset(defaultValues)
@@ -151,6 +243,19 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
               )}
             </div>
           </div>
+
+          {/* CC Emails */}
+          <Controller
+            control={form.control}
+            name="cc_emails"
+            render={({ field, fieldState }) => (
+              <CCEmailsInput
+                value={field.value ?? []}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+              />
+            )}
+          />
 
           {/* Phone + Country */}
           <div className="grid gap-4 sm:grid-cols-2">

@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
+import { isAdminEmail } from '@/lib/admin-auth';
 
 export async function updateSession(request: NextRequest) {
-  // Skip auth checks when Supabase env vars are not yet configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.next({ request });
   }
@@ -30,25 +30,29 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Refresh session without catching the result — just refreshes tokens
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users away from protected routes
   const pathname = request.nextUrl.pathname;
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
-  const isPublicRoute =
-    pathname === '/' ||
-    isAuthRoute ||
-    pathname.startsWith('/p/')         ||  // public invoice view
-    pathname.startsWith('/e/')         ||  // public estimate view
-    pathname.startsWith('/portal/')    ||  // client portal + login
-    pathname.startsWith('/api/p/')     ||  // public invoice PDF
-    pathname.startsWith('/api/e/')     ||  // public estimate PDF + respond
-    pathname.startsWith('/api/portal') ||  // portal OTP routes
-    pathname.startsWith('/api/webhooks');
 
+  const isAuthRoute   = pathname.startsWith('/login') || pathname.startsWith('/register');
+  const isAdminRoute  = pathname.startsWith('/admin');
+  const isPublicRoute =
+    pathname === '/'                      ||
+    isAuthRoute                           ||
+    pathname === '/suspended'             ||
+    pathname.startsWith('/p/')            ||
+    pathname.startsWith('/e/')            ||
+    pathname.startsWith('/portal/')       ||
+    pathname.startsWith('/api/p/')        ||
+    pathname.startsWith('/api/e/')        ||
+    pathname.startsWith('/api/portal')    ||
+    pathname.startsWith('/api/webhooks')  ||
+    pathname.startsWith('/privacy')       ||
+    pathname.startsWith('/terms');
+
+  // ── Unauthenticated access to protected routes ────────────────────────────
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
@@ -56,11 +60,37 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
+  // ── Admin route guard ─────────────────────────────────────────────────────
+  if (isAdminRoute) {
+    if (!user || !isAdminEmail(user.email)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    // Admins bypass is_active check (they manage it)
+    return supabaseResponse;
+  }
+
+  // ── Redirect authenticated users away from auth pages ────────────────────
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
+  }
+
+  // ── Suspended account check ───────────────────────────────────────────────
+  if (user && !isPublicRoute) {
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('is_active')
+      .eq('id', user.id)
+      .single();
+
+    if (userRecord && userRecord.is_active === false) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/suspended';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

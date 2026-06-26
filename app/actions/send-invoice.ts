@@ -2,8 +2,8 @@
 
 import { createElement } from 'react'
 import { revalidatePath } from 'next/cache'
-import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
 import { buildInvoiceEmail } from '@/lib/email/invoice-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
@@ -20,8 +20,9 @@ function fmtDate(d: string | null) {
 }
 
 export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> {
-  if (!process.env.RESEND_API_KEY) return { error: 'Email sending is not configured.' }
-  if (!process.env.RESEND_FROM_EMAIL) return { error: 'Sender email is not configured.' }
+  if (!isEmailConfigured()) return { error: 'Email sending is not configured.' }
+  const fromEmail = getEmailFrom()
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -64,7 +65,6 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
   )
 
   // Build + send email
-  const resend    = new Resend(process.env.RESEND_API_KEY)
   const shareUrl  = inv.share_token && process.env.NEXT_PUBLIC_APP_URL
     ? `${process.env.NEXT_PUBLIC_APP_URL}/p/${inv.share_token}`
     : undefined
@@ -88,9 +88,12 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
 
   const { subject, html, text } = buildInvoiceEmail(inv, client, org as Organization, shareUrl, customSubject, customBody)
 
-  const { data: sendData, error: sendError } = await resend.emails.send({
-    from:        process.env.RESEND_FROM_EMAIL,
-    to:          client.email,
+  const ccList = (client as Client).cc_emails?.filter(Boolean) ?? []
+
+  const { id: sendId, error: sendError } = await sendEmail({
+    from:    fromEmail,
+    to:      client.email,
+    cc:      ccList.length ? ccList : undefined,
     subject,
     html,
     text,
@@ -100,7 +103,7 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
     }],
   })
 
-  if (sendError) return { error: sendError.message }
+  if (sendError) return { error: sendError }
 
   const now = new Date().toISOString()
 
@@ -111,12 +114,12 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
     client_id:            client.id,
     user_id:              user.id,
     to_email:             client.email,
-    cc_emails:            [],
+    cc_emails:            ccList,
     subject,
     body:                 text,
     status:               'sent',
-    provider:             'resend',
-    provider_message_id:  sendData?.id ?? null,
+    provider:             process.env.EMAIL_PROVIDER ?? 'resend',
+    provider_message_id:  sendId ?? null,
     sent_at:              now,
     error_message:        null,
   })

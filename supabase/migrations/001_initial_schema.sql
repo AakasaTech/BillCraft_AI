@@ -45,6 +45,8 @@ CREATE TABLE public.organizations (
     invoice_prefix          VARCHAR(20)  NOT NULL DEFAULT 'INV',
     invoice_number_format   VARCHAR(50)  NOT NULL DEFAULT '{PREFIX}-{YEAR}-{NUM:04d}',
     next_invoice_number     INT          NOT NULL DEFAULT 1,
+    freepass_plan           VARCHAR(50),
+    freepass_until          TIMESTAMPTZ,
     created_at              TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at              TIMESTAMPTZ  NOT NULL DEFAULT now(),
     deleted_at              TIMESTAMPTZ
@@ -88,6 +90,7 @@ CREATE TABLE public.clients (
     preferred_language      VARCHAR(10),
     tax_registration_number VARCHAR(100),
     notes                   TEXT,
+    cc_emails               JSONB        NOT NULL DEFAULT '[]',
     is_active               BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at              TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at              TIMESTAMPTZ  NOT NULL DEFAULT now(),

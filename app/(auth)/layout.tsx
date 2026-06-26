@@ -1,4 +1,3 @@
-import { Zap } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -6,8 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 p-4">
       {/* Logo */}
       <Link href="/" className="mb-8 flex items-center gap-2 font-semibold text-lg">
-        <Zap className="h-5 w-5 text-primary" />
-        BillCraft AI
+        <img src="/logo.png" alt="BillCraft AI" className="h-32 w-auto" />
       </Link>
 
       {/* Card */}

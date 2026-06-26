@@ -39,6 +39,7 @@ function normalize(data: ClientFormData) {
     preferred_currency:      data.preferred_currency || null,
     tax_registration_number: data.tax_registration_number || null,
     notes:                   data.notes || null,
+    cc_emails:               data.cc_emails ?? [],
   }
 }
 

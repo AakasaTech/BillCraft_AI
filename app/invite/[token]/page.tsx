@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { AcceptInviteButton } from '@/components/invite/accept-invite-button'
 
@@ -52,8 +51,7 @@ export default async function InvitePage({
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-            <Zap className="h-5 w-5 text-primary" />
-            BillCraft AI
+            <img src="/logo.png" alt="BillCraft AI" className="h-7 w-auto" />
           </Link>
         </div>
 

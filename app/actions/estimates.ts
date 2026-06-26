@@ -3,8 +3,8 @@
 import { createElement } from 'react'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
 import { buildEstimateEmail } from '@/lib/email/estimate-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { estimateFormSchema, type EstimateFormData } from '@/lib/validations/estimates'
@@ -185,8 +185,9 @@ export async function markEstimateStatusAction(
 }
 
 export async function sendEstimateEmailAction(id: string): Promise<ActionResult> {
-  if (!process.env.RESEND_API_KEY)      return { error: 'Email sending is not configured.' }
-  if (!process.env.RESEND_FROM_EMAIL)   return { error: 'Sender email is not configured.' }
+  if (!isEmailConfigured()) return { error: 'Email sending is not configured.' }
+  const fromEmail = getEmailFrom()
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const ctx = await getCtx()
   if (!ctx) return { error: 'Not authenticated' }
@@ -233,8 +234,6 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
     ? `${process.env.NEXT_PUBLIC_APP_URL}/e/${estimate.share_token}`
     : undefined
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
-
   let customSubject: string | undefined
   let customBody:    string | undefined
   if (emailTpl) {
@@ -261,9 +260,12 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
 
   const { subject, html, text } = buildEstimateEmail(estimate, client, org as Organization, shareUrl, customSubject, customBody)
 
-  const { data: sendData, error: sendError } = await resend.emails.send({
-    from:        process.env.RESEND_FROM_EMAIL,
-    to:          client.email,
+  const ccList = (client as Client).cc_emails?.filter(Boolean) ?? []
+
+  const { id: sendId, error: sendError } = await sendEmail({
+    from:    fromEmail,
+    to:      client.email,
+    cc:      ccList.length ? ccList : undefined,
     subject,
     html,
     text,
@@ -273,7 +275,7 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
     }],
   })
 
-  if (sendError) return { error: sendError.message }
+  if (sendError) return { error: sendError }
 
   const now = new Date().toISOString()
 
@@ -282,12 +284,12 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
     client_id:           client.id,
     user_id:             ctx.userId,
     to_email:            client.email,
-    cc_emails:           [],
+    cc_emails:           ccList,
     subject,
     body:                text,
     status:              'sent',
-    provider:            'resend',
-    provider_message_id: sendData?.id ?? null,
+    provider:            process.env.EMAIL_PROVIDER ?? 'resend',
+    provider_message_id: sendId ?? null,
     sent_at:             now,
     error_message:       null,
   })

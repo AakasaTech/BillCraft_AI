@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createElement } from 'react'
 import { createServiceClient } from '@/lib/supabase/server'
+import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
 import { buildReminderEmail } from '@/lib/email/reminder-template'
 
 export const runtime = 'nodejs'
@@ -18,9 +19,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
+  if (!isEmailConfigured() || !getEmailFrom()) {
     return NextResponse.json({ error: 'Email not configured' }, { status: 500 })
   }
+  const fromEmail = getEmailFrom()
 
   const supabase = createServiceClient()
 
@@ -108,10 +110,8 @@ export async function GET(req: NextRequest) {
   }
 
   // 7 — Send emails
-  const { Resend }         = await import('resend')
   const { renderToBuffer } = await import('@react-pdf/renderer')
   const { InvoicePDF }     = await import('@/lib/pdf/invoice-pdf')
-  const resend             = new Resend(process.env.RESEND_API_KEY)
 
   let sent = 0
   const errors: string[] = []
@@ -133,9 +133,12 @@ export async function GET(req: NextRequest) {
         : undefined
       const { subject, html, text } = buildReminderEmail(inv, client, org, shareUrl)
 
-      const { data: sendData, error: sendErr } = await resend.emails.send({
-        from:        process.env.RESEND_FROM_EMAIL!,
-        to:          client.email,
+      const ccList = (client.cc_emails as string[] | undefined)?.filter(Boolean) ?? []
+
+      const { id: sendId, error: sendErr } = await sendEmail({
+        from:    fromEmail,
+        to:      client.email,
+        cc:      ccList.length ? ccList : undefined,
         subject,
         html,
         text,
@@ -145,7 +148,7 @@ export async function GET(req: NextRequest) {
         }],
       })
 
-      if (sendErr) throw new Error(sendErr.message)
+      if (sendErr) throw new Error(sendErr)
 
       const now = new Date().toISOString()
 
@@ -156,12 +159,12 @@ export async function GET(req: NextRequest) {
         client_id:           client.id,
         user_id:             null,
         to_email:            client.email,
-        cc_emails:           [],
+        cc_emails:           ccList,
         subject,
         body:                text,
         status:              'sent',
-        provider:            'resend',
-        provider_message_id: sendData?.id ?? null,
+        provider:            process.env.EMAIL_PROVIDER ?? 'resend',
+        provider_message_id: sendId ?? null,
         sent_at:             now,
         error_message:       null,
       })

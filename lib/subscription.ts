@@ -46,7 +46,7 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
 
     supabase
       .from('organizations')
-      .select('trial_ends_at')
+      .select('trial_ends_at, freepass_plan, freepass_until')
       .eq('id', orgId)
       .single(),
 
@@ -66,6 +66,28 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
 
   const cc = clientCount  ?? 0
   const ic = invoiceCount ?? 0
+
+  // ── Admin-granted free pass (highest priority) ────────────────────────────
+  if (org?.freepass_until && new Date(org.freepass_until) > now && org.freepass_plan) {
+    const plan  = (org.freepass_plan as string).toLowerCase()
+    const isPro = PRO_PLANS.has(plan)
+    return {
+      status:                   'active',
+      plan:                     `freepass:${plan}`,
+      trialEndsAt:              null,
+      trialDaysLeft:            null,
+      clientLimit:              -1,
+      invoiceMonthlyLimit:      -1,
+      currentClientCount:       cc,
+      currentMonthInvoiceCount: ic,
+      canCreateClient:          true,
+      canCreateInvoice:         true,
+      canUseAI:                 isPro,
+      canUseExpenses:           isPro,
+      canUseRecurring:          isPro,
+      canUseTemplates:          isPro,
+    }
+  }
 
   // ── Active paid subscription ───────────────────────────────────────────────
   if (sub) {

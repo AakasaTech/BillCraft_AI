@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Settings, CreditCard,
-  Zap, BarChart2, RefreshCw, Wallet, LayoutTemplate,
+  BarChart2, RefreshCw, Wallet, LayoutTemplate,
   Package, ClipboardList, ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -101,9 +101,7 @@ function NavContent({ pathname }: { pathname: string }) {
 function BrandHeader() {
   return (
     <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-5">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1D8CFF] shadow-lg shadow-blue-500/40">
-        <Zap className="h-5 w-5 text-white" strokeWidth={2.5} />
-      </div>
+      <img src="/app_icon.png" alt="BillCraft AI" className="h-9 w-auto shrink-0" />
       <div className="min-w-0">
         <p className="truncate text-sm font-bold leading-tight text-white tracking-tight">
           BillCraft AI

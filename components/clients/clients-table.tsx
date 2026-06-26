@@ -157,7 +157,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                             View
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditTarget({ id: client.id, name: client.name, email: client.email, phone: client.phone, address_line1: client.address_line1, address_line2: client.address_line2, city: client.city, state: client.state, postal_code: client.postal_code, country_code: client.country_code, preferred_currency: client.preferred_currency, tax_registration_number: client.tax_registration_number, notes: client.notes })}>
+                        <DropdownMenuItem onClick={() => setEditTarget({ id: client.id, name: client.name, email: client.email, phone: client.phone, address_line1: client.address_line1, address_line2: client.address_line2, city: client.city, state: client.state, postal_code: client.postal_code, country_code: client.country_code, preferred_currency: client.preferred_currency, tax_registration_number: client.tax_registration_number, notes: client.notes, cc_emails: client.cc_emails ?? [] })}>
                           <PencilIcon className="h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
