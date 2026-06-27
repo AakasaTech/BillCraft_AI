@@ -1,10 +1,10 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin-auth'
 import { GrantFreepassDialog } from './grant-freepass-dialog'
 import { ChevronLeft, Gift } from 'lucide-react'
+import type { Organization } from '@/types/database'
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
@@ -39,7 +39,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
   const db  = createServiceClient()
   const now = new Date()
 
-  const [{ data: org }, { data: members }, { data: sub }, { count: clientCount }, { count: invoiceCount }] = await Promise.all([
+  const [{ data: orgRaw }, { data: members }, { data: sub }, { count: clientCount }, { count: invoiceCount }] = await Promise.all([
     db.from('organizations')
       .select('*')
       .eq('id', id)
@@ -63,6 +63,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
     db.from('invoices').select('id', { count: 'exact', head: true }).eq('organization_id', id).is('deleted_at', null),
   ])
 
+  const org = orgRaw as Organization | null
   if (!org) notFound()
 
   const hasFreepass = org.freepass_until && new Date(org.freepass_until) > now
