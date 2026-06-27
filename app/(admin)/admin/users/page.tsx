@@ -21,7 +21,10 @@ export default async function AdminUsersPage() {
 
   const db = createServiceClient()
 
-  const [{ data: users }, { data: orgs }] = await Promise.all([
+  type UserRow = { id: string; email: string; name: string | null; role: string; is_active: boolean; organization_id: string | null; last_login_at: string | null; created_at: string; auth_provider: string | null }
+  type OrgRow  = { id: string; name: string }
+
+  const [usersRes, orgsRes] = await Promise.all([
     db.from('users')
       .select('id, email, name, role, is_active, organization_id, last_login_at, created_at, auth_provider')
       .is('deleted_at', null)
@@ -30,6 +33,9 @@ export default async function AdminUsersPage() {
       .select('id, name')
       .is('deleted_at', null),
   ])
+
+  const users = usersRes.data as UserRow[] | null
+  const orgs  = orgsRes.data  as OrgRow[]  | null
 
   const orgMap = Object.fromEntries((orgs ?? []).map((o) => [o.id, o.name]))
 

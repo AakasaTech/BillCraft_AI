@@ -40,7 +40,12 @@ export default async function AdminOrgsPage() {
   const db  = createServiceClient()
   const now = new Date()
 
-  const [{ data: orgsRaw }, { data: subsRaw }, { data: ownersRaw }, { data: usageCounts }] = await Promise.all([
+  type OrgRow    = { id: string; name: string; slug: string; created_at: string; trial_ends_at: string | null; freepass_plan: string | null; freepass_until: string | null }
+  type SubRow    = { organization_id: string; status: string; plan_name: string; amount: number | null; current_period_end: string | null }
+  type OwnerRow  = { organization_id: string; email: string }
+  type UsageRow  = { organization_id: string }
+
+  const [orgsRes, subsRes, ownersRes, usageRes] = await Promise.all([
     db.from('organizations')
       .select('id, name, slug, created_at, trial_ends_at, freepass_plan, freepass_until')
       .is('deleted_at', null)
@@ -59,6 +64,11 @@ export default async function AdminOrgsPage() {
       .select('organization_id')
       .is('deleted_at', null),
   ])
+
+  const orgsRaw     = orgsRes.data    as OrgRow[]   | null
+  const subsRaw     = subsRes.data    as SubRow[]   | null
+  const ownersRaw   = ownersRes.data  as OwnerRow[] | null
+  const usageCounts = usageRes.data   as UsageRow[] | null
 
   const orgs   = orgsRaw  ?? []
   const subMap = Object.fromEntries((subsRaw ?? []).map((s) => [s.organization_id, s]))

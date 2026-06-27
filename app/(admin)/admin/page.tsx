@@ -45,12 +45,10 @@ export default async function AdminDashboardPage() {
   const db = createServiceClient()
   const now = new Date()
 
-  const [
-    { count: totalOrgs },
-    { count: totalUsers },
-    { data: subs },
-    { data: recentOrgsRaw },
-  ] = await Promise.all([
+  type SubRow    = { status: string; amount: number | null; plan_name: string }
+  type RecentOrg = { id: string; name: string; slug: string; created_at: string; trial_ends_at: string | null; freepass_plan: string | null; freepass_until: string | null }
+
+  const [orgsCountRes, usersCountRes, subsRes, recentOrgsRes] = await Promise.all([
     db.from('organizations').select('id', { count: 'exact', head: true }).is('deleted_at', null),
     db.from('users').select('id', { count: 'exact', head: true }).is('deleted_at', null),
     db.from('subscriptions').select('status, amount, plan_name').eq('status', 'active'),
@@ -60,6 +58,11 @@ export default async function AdminDashboardPage() {
       .order('created_at', { ascending: false })
       .limit(10),
   ])
+
+  const totalOrgs    = orgsCountRes.count
+  const totalUsers   = usersCountRes.count
+  const subs         = subsRes.data      as SubRow[]    | null
+  const recentOrgsRaw = recentOrgsRes.data as RecentOrg[] | null
 
   // Compute stats
   const mrr = (subs ?? []).reduce((sum, s) => sum + (s.amount ?? 0), 0)
