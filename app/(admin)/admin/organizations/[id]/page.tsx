@@ -4,7 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin-auth'
 import { GrantFreepassDialog } from './grant-freepass-dialog'
 import { ChevronLeft, Gift } from 'lucide-react'
-import type { Organization } from '@/types/database'
+import type { Organization, Subscription, User } from '@/types/database'
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
@@ -39,7 +39,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
   const db  = createServiceClient()
   const now = new Date()
 
-  const [{ data: orgRaw }, { data: members }, { data: sub }, { count: clientCount }, { count: invoiceCount }] = await Promise.all([
+  const [orgRes, membersRes, subRes, clientsRes, invoicesRes] = await Promise.all([
     db.from('organizations')
       .select('*')
       .eq('id', id)
@@ -63,7 +63,11 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
     db.from('invoices').select('id', { count: 'exact', head: true }).eq('organization_id', id).is('deleted_at', null),
   ])
 
-  const org = orgRaw as Organization | null
+  const org          = orgRes.data as Organization | null
+  const members      = membersRes.data as Pick<User, 'id' | 'email' | 'name' | 'role' | 'is_active' | 'last_login_at' | 'created_at'>[] | null
+  const sub          = subRes.data as Subscription | null
+  const clientCount  = clientsRes.count
+  const invoiceCount = invoicesRes.count
   if (!org) notFound()
 
   const hasFreepass = org.freepass_until && new Date(org.freepass_until) > now
