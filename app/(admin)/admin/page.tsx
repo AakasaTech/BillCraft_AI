@@ -74,20 +74,25 @@ export default async function AdminDashboardPage() {
     return acc
   }, {})
 
+  type OwnerRow  = { organization_id: string; email: string; name: string | null }
+  type OrgSubRow = { organization_id: string; status: string; plan_name: string }
+
   // Get org ids for recent orgs to fetch owner emails
   const recentOrgs = recentOrgsRaw ?? []
   const orgIds = recentOrgs.map((o) => o.id)
-  const { data: owners } = orgIds.length
+  const ownersRes = orgIds.length
     ? await db.from('users').select('organization_id, email, name').in('organization_id', orgIds).eq('role', 'owner')
-    : { data: [] }
+    : null
+  const owners = (ownersRes?.data ?? []) as OwnerRow[]
 
-  const ownerByOrg = Object.fromEntries((owners ?? []).map((u) => [u.organization_id, u]))
+  const ownerByOrg = Object.fromEntries(owners.map((u) => [u.organization_id, u]))
 
   // Get sub status per org
-  const { data: orgSubs } = orgIds.length
+  const orgSubsRes = orgIds.length
     ? await db.from('subscriptions').select('organization_id, status, plan_name').in('organization_id', orgIds).eq('status', 'active')
-    : { data: [] }
-  const subByOrg = Object.fromEntries((orgSubs ?? []).map((s) => [s.organization_id, s]))
+    : null
+  const orgSubs = (orgSubsRes?.data ?? []) as OrgSubRow[]
+  const subByOrg = Object.fromEntries(orgSubs.map((s) => [s.organization_id, s]))
 
   const statCards = [
     { label: 'Total organizations', value: fmt(totalOrgs), icon: Building2, color: 'text-blue-400' },
