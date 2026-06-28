@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
         if (session.mode !== 'subscription') break
 
-        const orgId      = session.subscription_data?.metadata?.org_id ?? session.metadata?.org_id
+        const orgId      = session.metadata?.org_id
         const subId      = session.subscription as string
         const customerId = session.customer as string
         if (!orgId || !subId) break
