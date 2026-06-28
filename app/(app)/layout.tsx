@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id, name, role')
+    .select('*')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -33,12 +33,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase
       .from('organizations')
-      .select('name, slug, trial_ends_at')
+      .select('*')
       .eq('id', userRecord.organization_id)
       .single(),
     supabase
       .from('subscriptions')
-      .select('status')
+      .select('*')
       .eq('organization_id', userRecord.organization_id)
       .eq('status', 'active')
       .limit(1)

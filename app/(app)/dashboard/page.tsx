@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
@@ -89,29 +89,29 @@ export default async function DashboardPage() {
     { data: estimateStatuses },
     { data: recentEstimatesRaw },
   ] = await Promise.all([
-    supabase.from('organizations').select('name, default_currency').eq('id', orgId).single(),
+    supabase.from('organizations').select('*').eq('id', orgId).single(),
 
     // This month revenue
-    supabase.from('invoices').select('total')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null)
       .gte('issue_date', thisMonthStart),
 
     // Last month revenue
-    supabase.from('invoices').select('total')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null)
       .gte('issue_date', lastMonthStart).lte('issue_date', lastMonthEnd),
 
     // YTD revenue
-    supabase.from('invoices').select('total')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null)
       .gte('issue_date', thisYearStart),
 
     // All-time paid (for avg value)
-    supabase.from('invoices').select('total')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null),
 
     // Outstanding (sent + viewed + partial)
-    supabase.from('invoices').select('id, total')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).is('deleted_at', null)
       .in('status', ['sent', 'viewed', 'partial']),
 
@@ -127,12 +127,12 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false }).limit(5),
 
     // Revenue trend (12m)
-    supabase.from('invoices').select('total, issue_date')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null)
       .gte('issue_date', twelveMonthsAgo),
 
     // Status breakdown
-    supabase.from('invoices').select('status')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).is('deleted_at', null),
 
     // Revenue by client
@@ -140,22 +140,22 @@ export default async function DashboardPage() {
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null),
 
     // Avg days to pay: invoices with both sent_at and paid_at
-    supabase.from('invoices').select('sent_at, paid_at')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).eq('status', 'paid').is('deleted_at', null)
       .not('sent_at', 'is', null).not('paid_at', 'is', null),
 
     // All actionable invoices (for collection rate)
-    supabase.from('invoices').select('status')
+    supabase.from('invoices').select('*')
       .eq('organization_id', orgId).is('deleted_at', null)
       .in('status', ['paid', 'sent', 'viewed', 'partial', 'overdue']),
 
     // Expenses by month (for chart)
-    supabase.from('expenses').select('date, amount')
+    supabase.from('expenses').select('*')
       .eq('organization_id', orgId).is('deleted_at', null)
       .gte('date', twelveMonthsAgo),
 
     // Estimate statuses
-    supabase.from('estimates').select('status')
+    supabase.from('estimates').select('*')
       .eq('organization_id', orgId).is('deleted_at', null),
 
     // Recent estimates
@@ -164,6 +164,17 @@ export default async function DashboardPage() {
       .eq('organization_id', orgId).is('deleted_at', null)
       .order('created_at', { ascending: false }).limit(5),
   ])
+
+  // Explicit casts for join queries (avoids TypeScript instantiation-depth errors)
+  type OverdueInvoice = { id: string; invoice_number: string; total: number; currency: string; due_date: string | null; clients: { name: string } | null }
+  type RecentInvoice  = { id: string; invoice_number: string; total: number; status: string; currency: string; due_date: string | null; clients: { name: string } | null }
+  type PaidByClient   = { total: number; client_id: string; clients: { name: string } | null }
+  type RecentEstimate = { id: string; estimate_number: string; status: string; total: number; currency: string; clients: { name: string } | null }
+
+  const overdueRowsCast      = overdueRows      as OverdueInvoice[] | null
+  const recentInvoicesCast   = recentInvoices   as RecentInvoice[]  | null
+  const paidByClientCast     = paidByClient     as PaidByClient[]   | null
+  const recentEstimatesRawCast = recentEstimatesRaw as RecentEstimate[] | null
 
   const currency = orgData?.default_currency ?? 'USD'
   const orgName  = orgData?.name ?? 'your workspace'
@@ -174,7 +185,7 @@ export default async function DashboardPage() {
   const ytdRevenue       = (ytdPaid       ?? []).reduce((s, i) => s + i.total, 0)
   const totalRevenue     = (paidAll       ?? []).reduce((s, i) => s + i.total, 0)
   const totalOutstanding = (outstanding   ?? []).reduce((s, i) => s + i.total, 0)
-  const overdueTotal     = (overdueRows   ?? []).reduce((s, i) => s + i.total, 0)
+  const overdueTotal     = (overdueRowsCast   ?? []).reduce((s, i) => s + i.total, 0)
 
   const { pct: trendPct, up: trendUp } = trendLabel(thisMonthRevenue, lastMonthRevenue)
 
@@ -240,9 +251,9 @@ export default async function DashboardPage() {
 
   // ── Top clients ───────────────────────────────────────────────────────────────
   const clientRevMap: Record<string, { name: string; revenue: number; invoices: number }> = {}
-  for (const inv of paidByClient ?? []) {
+  for (const inv of paidByClientCast ?? []) {
     const cid  = inv.client_id
-    const name = (inv.clients as { name: string } | null)?.name ?? 'Unknown'
+    const name = inv.clients?.name ?? 'Unknown'
     if (!clientRevMap[cid]) clientRevMap[cid] = { name, revenue: 0, invoices: 0 }
     clientRevMap[cid].revenue  += inv.total
     clientRevMap[cid].invoices += 1
@@ -261,10 +272,10 @@ export default async function DashboardPage() {
   const acceptedEstimates = estStatusCounts['accepted']  ?? 0
   const declinedEstimates = estStatusCounts['declined']  ?? 0
 
-  const recentEstimates: EstimateWidgetItem[] = (recentEstimatesRaw ?? []).map(e => ({
+  const recentEstimates: EstimateWidgetItem[] = (recentEstimatesRawCast ?? []).map(e => ({
     id:              e.id,
     estimate_number: e.estimate_number,
-    client_name:     (e.clients as { name: string } | null)?.name ?? '—',
+    client_name:     e.clients?.name ?? '—',
     total:           e.total,
     currency:        e.currency,
     status:          e.status as EstimateStatus,
@@ -356,19 +367,19 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Overdue */}
-        <Card className={(overdueRows?.length ?? 0) > 0 ? 'border-destructive/30' : ''}>
+        <Card className={(overdueRowsCast?.length ?? 0) > 0 ? 'border-destructive/30' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-            {(overdueRows?.length ?? 0) > 0
+            {(overdueRowsCast?.length ?? 0) > 0
               ? <AlertTriangle className="h-4 w-4 text-destructive" />
               : <AlertTriangle className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${(overdueRows?.length ?? 0) > 0 ? 'text-destructive' : ''}`}>
+            <div className={`text-2xl font-bold ${(overdueRowsCast?.length ?? 0) > 0 ? 'text-destructive' : ''}`}>
               {formatCurrency(overdueTotal, currency)}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {(overdueRows?.length ?? 0)} invoice{(overdueRows?.length ?? 0) !== 1 ? 's' : ''} overdue
+              {(overdueRowsCast?.length ?? 0)} invoice{(overdueRowsCast?.length ?? 0) !== 1 ? 's' : ''} overdue
             </p>
           </CardContent>
         </Card>
@@ -446,20 +457,20 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Overdue invoices</CardTitle>
-            {(overdueRows?.length ?? 0) > 0 && (
+            {(overdueRowsCast?.length ?? 0) > 0 && (
               <span className="flex items-center gap-1 text-xs font-medium text-destructive">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                {overdueRows!.length} overdue
+                {overdueRowsCast!.length} overdue
               </span>
             )}
           </CardHeader>
           <CardContent className="p-0">
-            {(overdueRows?.length ?? 0) === 0 ? (
+            {(overdueRowsCast?.length ?? 0) === 0 ? (
               <p className="px-6 pb-6 text-sm text-muted-foreground">No overdue invoices. Great work!</p>
             ) : (
               <div className="divide-y">
-                {overdueRows!.map(inv => {
-                  const clientName = (inv.clients as { name: string } | null)?.name ?? '—'
+                {overdueRowsCast!.map(inv => {
+                  const clientName = inv.clients?.name ?? '—'
                   const daysOverdue = inv.due_date
                     ? Math.floor((Date.now() - new Date(inv.due_date).getTime()) / 86400000)
                     : null
@@ -497,7 +508,7 @@ export default async function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            {(recentInvoices?.length ?? 0) === 0 ? (
+            {(recentInvoicesCast?.length ?? 0) === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
                 <FileText className="h-8 w-8 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">No invoices yet.</p>
@@ -509,8 +520,8 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="divide-y">
-                {recentInvoices!.map(inv => {
-                  const clientName = (inv.clients as { name: string } | null)?.name ?? '—'
+                {recentInvoicesCast!.map(inv => {
+                  const clientName = inv.clients?.name ?? '—'
                   return (
                     <Link
                       key={inv.id}

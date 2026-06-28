@@ -10,7 +10,7 @@ export default async function NewEstimatePage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
@@ -18,20 +18,20 @@ export default async function NewEstimatePage() {
   const [{ data: clientsRaw }, { data: org }, { data: nextNum }, { data: productsRaw }] = await Promise.all([
     supabase
       .from('clients')
-      .select('id, name')
+      .select('*')
       .eq('organization_id', orgId)
       .is('deleted_at', null)
       .eq('is_active', true)
       .order('name'),
     supabase
       .from('organizations')
-      .select('default_currency')
+      .select('*')
       .eq('id', orgId)
       .single(),
     supabase.rpc('peek_estimate_number', { p_org_id: orgId }),
     supabase
       .from('products')
-      .select('id, name, description, unit_price, currency')
+      .select('*')
       .eq('organization_id', orgId)
       .eq('is_active', true)
       .is('deleted_at', null)

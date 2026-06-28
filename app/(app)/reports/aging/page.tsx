@@ -78,13 +78,13 @@ export default async function AgingReportPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
 
   const [{ data: orgData }, { data: rawInvoices }] = await Promise.all([
-    supabase.from('organizations').select('default_currency').eq('id', orgId).single(),
+    supabase.from('organizations').select('*').eq('id', orgId).single(),
 
     supabase
       .from('invoices')
@@ -102,10 +102,13 @@ export default async function AgingReportPage() {
   today.setUTCHours(0, 0, 0, 0)
   const todayMs = today.getTime()
 
+  type AgingRawInvoice = { id: string; invoice_number: string; client_id: string; due_date: string | null; amount_due: number; currency: string; clients: { id: string; name: string } | null }
+  const agingInvoices = rawInvoices as AgingRawInvoice[] | null
+
   const clientMap = new Map<string, ClientRow>()
 
-  for (const inv of rawInvoices ?? []) {
-    const client     = (inv as any).clients as { id: string; name: string } | null
+  for (const inv of agingInvoices ?? []) {
+    const client     = inv.clients
     const clientId   = client?.id   ?? inv.client_id
     const clientName = client?.name ?? 'Unknown client'
     const amount     = Number(inv.amount_due)

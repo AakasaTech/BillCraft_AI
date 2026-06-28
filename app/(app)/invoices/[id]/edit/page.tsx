@@ -14,7 +14,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('*')
     .eq('id', user.id)
     .single()
   if (!userRecord?.organization_id) redirect('/onboard')
@@ -36,19 +36,19 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
       .order('sort_order'),
     supabase
       .from('clients')
-      .select('id, name')
+      .select('*')
       .eq('organization_id', orgId)
       .is('deleted_at', null)
       .eq('is_active', true)
       .order('name'),
     supabase
       .from('organizations')
-      .select('default_currency, payment_instructions')
+      .select('*')
       .eq('id', orgId)
       .single(),
     supabase
       .from('products')
-      .select('id, name, description, unit_price, currency')
+      .select('*')
       .eq('organization_id', orgId)
       .eq('is_active', true)
       .is('deleted_at', null)

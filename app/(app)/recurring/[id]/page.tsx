@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { RecurringForm } from '@/components/recurring/recurring-form'
 import { RecurringActions } from '@/components/recurring/recurring-actions'
 import { formatDate } from '@/lib/utils'
+import type { RecurringInvoice } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Edit Recurring Schedule — BillCraft AI' }
 
@@ -28,12 +29,12 @@ export default async function RecurringDetailPage({
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
 
-  const [{ data: rec }, { data: clients }, { data: org }] = await Promise.all([
+  const [{ data: recRaw }, { data: clients }, { data: org }] = await Promise.all([
     supabase
       .from('recurring_invoices')
       .select('*, clients(name)')
@@ -42,17 +43,19 @@ export default async function RecurringDetailPage({
       .is('deleted_at', null)
       .single(),
     supabase
-      .from('clients').select('id, name')
+      .from('clients').select('*')
       .eq('organization_id', orgId)
       .is('deleted_at', null).eq('is_active', true).order('name'),
     supabase
-      .from('organizations').select('default_currency')
+      .from('organizations').select('*')
       .eq('id', orgId).single(),
   ])
 
-  if (!rec) notFound()
+  if (!recRaw) notFound()
 
-  const clientName = (rec.clients as { name: string } | null)?.name ?? '—'
+  const rec = recRaw as unknown as RecurringInvoice & { clients: { name: string } | null }
+
+  const clientName = rec.clients?.name ?? '—'
   const label      = rec.title || clientName
 
   return (

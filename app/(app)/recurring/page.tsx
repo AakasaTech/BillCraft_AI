@@ -26,7 +26,7 @@ export default async function RecurringPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const plan = await getPlanStatus(userRecord.organization_id, supabase)
@@ -41,13 +41,16 @@ export default async function RecurringPage() {
     )
   }
 
-  const { data: schedules } = await supabase
+  const { data: schedulesRaw } = await supabase
     .from('recurring_invoices')
     .select('id, title, frequency, next_issue_date, currency, is_active, total_issued, last_issued_at, items, clients(name)')
     .eq('organization_id', userRecord.organization_id)
     .is('deleted_at', null)
     .order('is_active', { ascending: false })
     .order('next_issue_date', { ascending: true })
+
+  type RecurringWithClient = { id: string; title: string | null; frequency: string; next_issue_date: string; currency: string; is_active: boolean; total_issued: number; last_issued_at: string | null; items: unknown; clients: { name: string } | null }
+  const schedules = schedulesRaw as RecurringWithClient[] | null
 
   return (
     <div className="space-y-6 p-6">
@@ -82,10 +85,10 @@ export default async function RecurringPage() {
         </Card>
       ) : (
         <div className="grid gap-3">
-          {(schedules as any[]).map(rec => {
-            const items      = Array.isArray(rec.items) ? rec.items : []
-            const subtotal   = items.reduce((s: number, i: any) => s + (i.quantity * i.unit_price), 0)
-            const clientName = (rec.clients as { name: string } | null)?.name ?? '—'
+          {(schedules ?? []).map(rec => {
+            const items      = Array.isArray(rec.items) ? rec.items as { quantity: number; unit_price: number }[] : []
+            const subtotal   = items.reduce((s, i) => s + (i.quantity * i.unit_price), 0)
+            const clientName = rec.clients?.name ?? '—'
             const label      = rec.title || clientName
 
             return (

@@ -15,12 +15,12 @@ export default async function InvoicesPage({
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('*')
     .eq('id', user.id)
     .single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
-  const { data: raw } = await supabase
+  const { data: rawResult } = await supabase
     .from('invoices')
     .select(`
       id, invoice_number, status, total, currency, issue_date, due_date,
@@ -30,6 +30,9 @@ export default async function InvoicesPage({
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
+  type InvoiceWithClient = { id: string; invoice_number: string; status: string; total: number; currency: string; issue_date: string; due_date: string | null; clients: { name: string } | null }
+  const raw = rawResult as InvoiceWithClient[] | null
+
   const invoices: InvoiceRow[] = (raw ?? []).map((inv) => ({
     id:             inv.id,
     invoice_number: inv.invoice_number,
@@ -38,7 +41,7 @@ export default async function InvoicesPage({
     currency:       inv.currency,
     issue_date:     inv.issue_date,
     due_date:       inv.due_date,
-    client_name:    (inv.clients as unknown as { name: string } | null)?.name ?? 'Unknown client',
+    client_name:    inv.clients?.name ?? 'Unknown client',
   }))
 
   const { q } = await searchParams

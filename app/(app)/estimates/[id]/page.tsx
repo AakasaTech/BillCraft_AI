@@ -12,7 +12,7 @@ export default async function EstimateDetailPage({ params }: { params: Promise<{
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id

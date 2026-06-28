@@ -58,7 +58,7 @@ export default async function ReportsPage({
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId     = userRecord.organization_id
@@ -79,13 +79,13 @@ export default async function ReportsPage({
     { data: summaryRows },
     { data: invoices, count },
   ] = await Promise.all([
-    supabase.from('clients').select('id, name')
+    supabase.from('clients').select('*')
       .eq('organization_id', orgId).is('deleted_at', null).order('name'),
 
-    supabase.from('organizations').select('default_currency').eq('id', orgId).single(),
+    supabase.from('organizations').select('*').eq('id', orgId).single(),
 
     applyFilters(
-      supabase.from('invoices').select('total, status')
+      supabase.from('invoices').select('*')
         .eq('organization_id', orgId).is('deleted_at', null)
     ),
 
@@ -96,6 +96,8 @@ export default async function ReportsPage({
     ).order('issue_date', { ascending: false })
      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
   ])
+
+  type ReportInvoice = { id: string; invoice_number: string; total: number; currency: string; status: string; issue_date: string; due_date: string | null; clients: { name: string } | null }
 
   const currency   = orgData?.default_currency ?? 'USD'
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
@@ -201,8 +203,8 @@ export default async function ReportsPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {(invoices as any[]).map((inv) => {
-                      const clientName = (inv.clients as { name: string } | null)?.name ?? '—'
+                    {(invoices as ReportInvoice[] | null ?? []).map((inv) => {
+                      const clientName = inv.clients?.name ?? '—'
                       return (
                         <tr key={inv.id} className="transition-colors hover:bg-muted/30">
                           <td className="px-6 py-3 font-medium">

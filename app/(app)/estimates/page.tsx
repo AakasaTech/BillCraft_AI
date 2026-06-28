@@ -14,15 +14,18 @@ export default async function EstimatesPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
-  const { data: estimatesRaw } = await supabase
+  const { data: estimatesRawResult } = await supabase
     .from('estimates')
     .select('id, estimate_number, status, total, currency, issue_date, expiry_date, share_token, clients(name)')
     .eq('organization_id', userRecord.organization_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+
+  type EstimateWithClient = { id: string; estimate_number: string; status: string; total: number; currency: string; issue_date: string; expiry_date: string | null; share_token: string | null; clients: { name: string } | null }
+  const estimatesRaw = estimatesRawResult as EstimateWithClient[] | null
 
   const estimates = (estimatesRaw ?? []).map(e => ({
     id:              e.id,
@@ -33,7 +36,7 @@ export default async function EstimatesPage() {
     issue_date:      e.issue_date,
     expiry_date:     e.expiry_date,
     share_token:     e.share_token,
-    client_name:     (e.clients as { name: string } | null)?.name ?? '—',
+    client_name:     e.clients?.name ?? '—',
   }))
 
   return (

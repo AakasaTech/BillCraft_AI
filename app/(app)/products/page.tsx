@@ -11,7 +11,7 @@ export default async function ProductsPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
@@ -25,7 +25,7 @@ export default async function ProductsPage() {
       .order('name'),
     supabase
       .from('organizations')
-      .select('default_currency')
+      .select('*')
       .eq('id', orgId)
       .single(),
   ])

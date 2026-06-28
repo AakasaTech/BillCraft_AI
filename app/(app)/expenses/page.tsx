@@ -14,7 +14,7 @@ export default async function ExpensesPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
@@ -32,7 +32,7 @@ export default async function ExpensesPage() {
   }
 
   const [{ data: orgData }, { data: expenses }] = await Promise.all([
-    supabase.from('organizations').select('default_currency').eq('id', orgId).single(),
+    supabase.from('organizations').select('*').eq('id', orgId).single(),
     supabase.from('expenses')
       .select('*')
       .eq('organization_id', orgId)

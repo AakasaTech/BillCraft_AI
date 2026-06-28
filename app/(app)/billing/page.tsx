@@ -24,7 +24,7 @@ export default async function BillingPage({
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id, role').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId   = userRecord.organization_id
@@ -61,7 +61,7 @@ export default async function BillingPage({
       .maybeSingle(),
     supabase
       .from('organizations')
-      .select('trial_ends_at')
+      .select('*')
       .eq('id', orgId)
       .single(),
   ])

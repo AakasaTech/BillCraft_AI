@@ -11,17 +11,17 @@ export default async function NewRecurringPage() {
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const [{ data: clients }, { data: org }] = await Promise.all([
     supabase
-      .from('clients').select('id, name')
+      .from('clients').select('*')
       .eq('organization_id', userRecord.organization_id)
       .is('deleted_at', null).eq('is_active', true)
       .order('name'),
     supabase
-      .from('organizations').select('default_currency')
+      .from('organizations').select('*')
       .eq('id', userRecord.organization_id).single(),
   ])
 

@@ -17,7 +17,7 @@ export default async function ClientDetailPage({
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
@@ -32,7 +32,7 @@ export default async function ClientDetailPage({
       .single(),
     supabase
       .from('invoices')
-      .select('id, invoice_number, status, issue_date, due_date, currency, total, amount_paid, amount_due')
+      .select('*')
       .eq('client_id', id)
       .eq('organization_id', orgId)
       .is('deleted_at', null)

@@ -31,7 +31,7 @@ export default async function ClientStatementPage({
   if (!user) redirect('/login')
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
   const orgId = userRecord.organization_id
@@ -41,7 +41,7 @@ export default async function ClientStatementPage({
       supabase.from('clients').select('*').eq('id', id).eq('organization_id', orgId).is('deleted_at', null).single(),
       supabase
         .from('invoices')
-        .select('id, invoice_number, issue_date, total, currency, status')
+        .select('*')
         .eq('client_id', id).eq('organization_id', orgId)
         .gte('issue_date', from).lte('issue_date', to)
         .not('status', 'in', '("draft","void","cancelled")')
@@ -49,7 +49,7 @@ export default async function ClientStatementPage({
         .order('issue_date'),
       supabase
         .from('payments')
-        .select('id, invoice_id, amount, currency, payment_date, reference, payment_method')
+        .select('*')
         .eq('client_id', id).eq('organization_id', orgId)
         .gte('payment_date', from).lte('payment_date', to)
         .eq('status', 'completed')

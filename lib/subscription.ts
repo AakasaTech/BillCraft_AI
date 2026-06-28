@@ -37,7 +37,7 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
   ] = await Promise.all([
     supabase
       .from('subscriptions')
-      .select('plan_name, status')
+      .select('*')
       .eq('organization_id', orgId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -46,7 +46,7 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
 
     supabase
       .from('organizations')
-      .select('trial_ends_at, freepass_plan, freepass_until')
+      .select('*')
       .eq('id', orgId)
       .single(),
 

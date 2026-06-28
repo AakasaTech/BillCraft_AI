@@ -21,7 +21,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const { data: userRecord } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('*')
     .eq('id', user.id)
     .single()
   if (!userRecord?.organization_id) redirect('/onboard')
