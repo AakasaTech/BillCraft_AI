@@ -105,8 +105,7 @@ export async function GET(req: NextRequest) {
   const orgMap: Record<string, any>   = Object.fromEntries((fullOrgs ?? []).map((o: any) => [o.id, o]))
   const itemsMap: Record<string, any[]> = {}
   for (const item of allItems ?? []) {
-    if (!itemsMap[item.invoice_id]) itemsMap[item.invoice_id] = []
-    itemsMap[item.invoice_id].push(item)
+    (itemsMap[item.invoice_id] ??= []).push(item)
   }
 
   // 7 — Send emails
