@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useTransition } from 'react'
 import { Plus } from 'lucide-react'
@@ -27,7 +27,7 @@ interface Props {
 }
 
 function blankForm(defaultCurrency: string, expense?: Expense): ExpenseInput {
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
   return {
     date:        expense?.date        ?? today,
     category:    (expense?.category   ?? 'other') as ExpenseCategory,

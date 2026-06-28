@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -50,7 +50,7 @@ export function RecordPaymentDialog({
   invoiceId, amountDue, currency, disabled,
 }: RecordPaymentDialogProps) {
   const [open, setOpen] = useState(false)
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),

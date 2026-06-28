@@ -9,7 +9,7 @@ export const metadata = { title: 'Client Statement — BillCraft AI' }
 function defaultDateRange() {
   const now   = new Date()
   const year  = now.getFullYear()
-  const today = now.toISOString().split('T')[0]
+  const today = now.toISOString().slice(0, 10)
   return { from: `${year}-01-01`, to: today }
 }
 

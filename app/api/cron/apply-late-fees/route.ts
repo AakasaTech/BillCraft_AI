@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server'
+﻿import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 function addDays(base: Date, n: number): string {
   const d = new Date(base)
   d.setUTCDate(d.getUTCDate() + n)
-  return d.toISOString().split('T')[0]
+  return d.toISOString().slice(0, 10)
 }
 
 export async function GET(req: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const todayDate = new Date()
   todayDate.setUTCHours(0, 0, 0, 0)
-  const todayStr = todayDate.toISOString().split('T')[0]
+  const todayStr = todayDate.toISOString().slice(0, 10)
 
   // 1 — Orgs with late fees enabled
   const { data: orgs, error: orgsErr } = await supabase

@@ -1,4 +1,4 @@
-export function getDateRange(
+﻿export function getDateRange(
   preset:      string,
   customFrom?: string,
   customTo?:   string,
@@ -6,17 +6,17 @@ export function getDateRange(
   const now   = new Date()
   const y     = now.getFullYear()
   const m     = now.getMonth()
-  const today = now.toISOString().split('T')[0]
+  const today = now.toISOString().slice(0, 10)
 
   if (preset === 'this_month')  return { from: `${y}-${String(m + 1).padStart(2, '0')}-01`, to: today }
   if (preset === 'last_month') {
     const f = new Date(y, m - 1, 1)
     const t = new Date(y, m, 0)
-    return { from: f.toISOString().split('T')[0], to: t.toISOString().split('T')[0] }
+    return { from: f.toISOString().slice(0, 10), to: t.toISOString().slice(0, 10) }
   }
   if (preset === 'this_quarter') {
     const q = Math.floor(m / 3)
-    return { from: new Date(y, q * 3, 1).toISOString().split('T')[0], to: today }
+    return { from: new Date(y, q * 3, 1).toISOString().slice(0, 10), to: today }
   }
   if (preset === 'last_quarter') {
     const q  = Math.floor(m / 3)
@@ -24,7 +24,7 @@ export function getDateRange(
     const py = q === 0 ? y - 1 : y
     const f  = new Date(py, pq * 3, 1)
     const t  = new Date(py, pq * 3 + 3, 0)
-    return { from: f.toISOString().split('T')[0], to: t.toISOString().split('T')[0] }
+    return { from: f.toISOString().slice(0, 10), to: t.toISOString().slice(0, 10) }
   }
   if (preset === 'this_year') return { from: `${y}-01-01`,     to: today }
   if (preset === 'last_year') return { from: `${y - 1}-01-01`, to: `${y - 1}-12-31` }
@@ -40,7 +40,7 @@ export function buildSearchParams(
   const params = new URLSearchParams()
   for (const [k, v] of Object.entries(sp)) {
     if (v && !exclude.includes(k)) {
-      params.set(k, Array.isArray(v) ? v[0] : v)
+      params.set(k, Array.isArray(v) ? (v[0] ?? '') : v)
     }
   }
   return params.toString()

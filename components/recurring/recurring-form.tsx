@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -56,7 +56,7 @@ export function RecurringForm({ clients, defaultCurrency, id, defaultValues }: R
   const [error, setError] = useState<string | null>(null)
   const isEdit  = !!id
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
 
   const form = useForm<RecurringFormData>({
     resolver: zodResolver(recurringFormSchema),

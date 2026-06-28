@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import {
@@ -59,11 +59,11 @@ export default async function DashboardPage() {
 
   // Date boundaries
   const now           = new Date()
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-  const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10)
+  const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10)
   const thisYearStart  = `${now.getFullYear()}-01-01`
-  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().split('T')[0]
+  const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString().slice(0, 10)
 
   const [
     { data: orgData },
@@ -224,11 +224,11 @@ export default async function DashboardPage() {
   }
   for (const inv of paidTrend ?? []) {
     const key = inv.issue_date.slice(0, 7)
-    if (key in revenueByMonth) revenueByMonth[key] += inv.total
+    if (key in revenueByMonth) revenueByMonth[key] = (revenueByMonth[key] ?? 0) + inv.total
   }
   for (const exp of expensesRaw ?? []) {
     const key = (exp.date as string).slice(0, 7)
-    if (key in expensesByMonth) expensesByMonth[key] += exp.amount
+    if (key in expensesByMonth) expensesByMonth[key] = (expensesByMonth[key] ?? 0) + exp.amount
   }
   const revenueData: RevenueDataPoint[] = Object.entries(revenueByMonth).map(([key, revenue]) => {
     const [, month] = key.split('-')

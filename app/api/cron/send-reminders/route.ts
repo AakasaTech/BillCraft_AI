@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createElement } from 'react'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 function addDays(base: Date, n: number): string {
   const d = new Date(base)
   d.setUTCDate(d.getUTCDate() + n)
-  return d.toISOString().split('T')[0]
+  return d.toISOString().slice(0, 10)
 }
 
 export async function GET(req: NextRequest) {
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   // Today as a UTC midnight Date (for consistent comparisons)
   const todayDate = new Date()
   todayDate.setUTCHours(0, 0, 0, 0)
-  const todayStr = todayDate.toISOString().split('T')[0]
+  const todayStr = todayDate.toISOString().slice(0, 10)
 
   // 1 — Orgs that have auto-reminders enabled
   const { data: orgs, error: orgsErr } = await supabase

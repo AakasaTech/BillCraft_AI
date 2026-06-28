@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useTransition } from 'react'
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
@@ -49,7 +49,7 @@ export function EstimateEditor({
     defaultValues: {
       client_id:       defaultValues?.client_id       ?? '',
       estimate_number: defaultValues?.estimate_number ?? nextEstimateNumber ?? '',
-      issue_date:      defaultValues?.issue_date       ?? new Date().toISOString().split('T')[0],
+      issue_date:      defaultValues?.issue_date       ?? new Date().toISOString().slice(0, 10),
       expiry_date:     defaultValues?.expiry_date      ?? '',
       currency:        defaultValues?.currency         ?? defaultCurrency,
       tax_type:        defaultValues?.tax_type         ?? 'none',

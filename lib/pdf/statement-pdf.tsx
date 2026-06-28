@@ -89,7 +89,7 @@ export function StatementPDF({
           <View>
             {org.logo_url ? (
               <Image
-                src={org.logo_url.split('?')[0]}
+                src={org.logo_url.split('?')[0] ?? org.logo_url}
                 style={{ height: 44, maxWidth: 150, objectFit: 'contain', marginBottom: 6 }}
               />
             ) : null}

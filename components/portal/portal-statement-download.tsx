@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { FileText } from 'lucide-react'
@@ -11,7 +11,7 @@ interface PortalStatementDownloadProps {
 export function PortalStatementDownload({ token, clientName }: PortalStatementDownloadProps) {
   const thisYear = new Date().getFullYear()
   const [from, setFrom] = useState(`${thisYear}-01-01`)
-  const [to,   setTo]   = useState(new Date().toISOString().split('T')[0])
+  const [to,   setTo]   = useState(new Date().toISOString().slice(0, 10))
 
   const pdfUrl  = `/api/portal/${token}/statement/pdf?from=${from}&to=${to}`
   const filename = `statement-${clientName.replace(/\s+/g, '-')}-${from}-${to}.pdf`

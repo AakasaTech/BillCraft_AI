@@ -92,7 +92,7 @@ export function InvoicePDF({ invoice, items, client, org }: InvoicePDFProps) {
           <View>
             {org.logo_url ? (
               <Image
-                src={org.logo_url.split('?')[0]}
+                src={org.logo_url.split('?')[0] ?? org.logo_url}
                 style={{ height: 48, maxWidth: 160, objectFit: 'contain', marginBottom: 6 }}
               />
             ) : null}

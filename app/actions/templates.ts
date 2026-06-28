@@ -29,7 +29,7 @@ export type TemplateFormData = z.infer<typeof templateSchema>
 
 export async function createTemplateAction(raw: unknown) {
   const parsed = templateSchema.safeParse(raw)
-  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -64,7 +64,7 @@ export async function createTemplateAction(raw: unknown) {
 
 export async function updateTemplateAction(id: string, raw: unknown) {
   const parsed = templateSchema.safeParse(raw)
-  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createElement } from 'react'
 import { revalidatePath } from 'next/cache'
@@ -341,7 +341,7 @@ export async function convertToInvoiceAction(id: string): Promise<{ error?: stri
     .rpc('next_invoice_number', { p_org_id: ctx.orgId })
   if (numErr) return { error: numErr.message }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().slice(0, 10)
 
   const { data: invoice, error: invErr } = await ctx.supabase
     .from('invoices')

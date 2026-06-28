@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server'
+﻿import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getDateRange, toCsv } from '@/lib/reports'
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     ]
   })
 
-  const date = new Date().toISOString().split('T')[0]
+  const date = new Date().toISOString().slice(0, 10)
   const csv  = toCsv([HEADER, ...csvRows])
 
   return new NextResponse(csv, {

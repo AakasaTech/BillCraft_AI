@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server'
+﻿import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getDateRange } from '@/lib/reports'
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     ].join(','))
   }
 
-  const filename = `billcraft-invoices-${new Date().toISOString().split('T')[0]}.csv`
+  const filename = `billcraft-invoices-${new Date().toISOString().slice(0, 10)}.csv`
 
   return new NextResponse(lines.join('\r\n'), {
     status:  200,

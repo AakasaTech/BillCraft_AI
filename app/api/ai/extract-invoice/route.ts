@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import https from 'node:https'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     if (!parsed.success) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
 
     const { prompt, clients, currency } = parsed.data
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().slice(0, 10)
 
     const clientList = clients.length > 0
       ? clients.map(c => `- ${c.name} (id: ${c.id})`).join('\n')

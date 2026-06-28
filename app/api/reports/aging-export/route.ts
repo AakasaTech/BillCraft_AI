@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server'
+﻿import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { toCsv } from '@/lib/reports'
@@ -59,7 +59,7 @@ export async function GET(_req: NextRequest) {
     ]
   })
 
-  const date = today.toISOString().split('T')[0]
+  const date = today.toISOString().slice(0, 10)
   const csv  = toCsv([HEADER, ...rows])
 
   return new NextResponse(csv, {

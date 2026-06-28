@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+﻿import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InvoiceEditor } from '@/components/invoices/invoice-editor'
 import type { InvoiceTemplate, InvoiceTemplateItem } from '@/types/database'
@@ -6,9 +6,9 @@ import type { InvoiceFormData } from '@/lib/validations/invoices'
 
 export const metadata = { title: 'New Invoice — BillCraft AI' }
 
-const today = () => new Date().toISOString().split('T')[0]
+const today = () => new Date().toISOString().slice(0, 10)
 const addDays = (days: number) =>
-  new Date(Date.now() + days * 86_400_000).toISOString().split('T')[0]
+  new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10)
 
 export default async function NewInvoicePage({
   searchParams,

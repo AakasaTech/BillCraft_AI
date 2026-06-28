@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useTransition } from 'react'
 import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form'
@@ -37,8 +37,8 @@ interface InvoiceEditorProps {
   products?:                  ProductOption[]
 }
 
-const today   = () => new Date().toISOString().split('T')[0]
-const in30    = () => new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+const today   = () => new Date().toISOString().slice(0, 10)
+const in30    = () => new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
 
 export function InvoiceEditor({
   clients,

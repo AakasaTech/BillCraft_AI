@@ -25,7 +25,7 @@ async function getCtx() {
 
 export async function upsertEmailTemplateAction(raw: unknown): Promise<ActionResult> {
   const parsed = schema.safeParse(raw)
-  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
 
   const ctx = await getCtx()
   if (!ctx) return { error: 'Not authenticated' }

@@ -33,7 +33,7 @@ function pageUrl(
 ): string {
   const params = new URLSearchParams()
   for (const [k, v] of Object.entries(sp)) {
-    if (v && k !== 'page') params.set(k, Array.isArray(v) ? v[0] : v)
+    if (v && k !== 'page') params.set(k, Array.isArray(v) ? (v[0] ?? '') : v)
   }
   params.set('page', String(p))
   return `?${params.toString()}`
@@ -113,7 +113,7 @@ export default async function ReportsPage({
   // Build export URL from current filters (excluding pagination)
   const exportParams = new URLSearchParams()
   for (const [k, v] of Object.entries(sp)) {
-    if (v && k !== 'page') exportParams.set(k, Array.isArray(v) ? v[0] : v)
+    if (v && k !== 'page') exportParams.set(k, Array.isArray(v) ? (v[0] ?? '') : v)
   }
   const exportUrl = `/api/reports/export?${exportParams.toString()}`
 

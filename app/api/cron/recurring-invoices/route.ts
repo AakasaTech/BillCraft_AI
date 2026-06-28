@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
 function addMonths(date: Date, n: number): Date {
@@ -15,11 +15,11 @@ function calcNextIssueDate(current: string, frequency: string): string {
   switch (frequency) {
     case 'weekly':    d.setUTCDate(d.getUTCDate() + 7);  break
     case 'biweekly':  d.setUTCDate(d.getUTCDate() + 14); break
-    case 'monthly':   return addMonths(d, 1).toISOString().split('T')[0]
-    case 'quarterly': return addMonths(d, 3).toISOString().split('T')[0]
-    case 'yearly':    return addMonths(d, 12).toISOString().split('T')[0]
+    case 'monthly':   return addMonths(d, 1).toISOString().slice(0, 10)
+    case 'quarterly': return addMonths(d, 3).toISOString().slice(0, 10)
+    case 'yearly':    return addMonths(d, 12).toISOString().slice(0, 10)
   }
-  return d.toISOString().split('T')[0]
+  return d.toISOString().slice(0, 10)
 }
 
 export async function GET(req: NextRequest) {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createServiceClient()
-  const today    = new Date().toISOString().split('T')[0]
+  const today    = new Date().toISOString().slice(0, 10)
 
   const { data: due, error: fetchErr } = await supabase
     .from('recurring_invoices')
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       const issueDate = rec.next_issue_date
       const dueDateObj = new Date(issueDate + 'T00:00:00Z')
       dueDateObj.setUTCDate(dueDateObj.getUTCDate() + (rec.due_days ?? 30))
-      const dueDate = dueDateObj.toISOString().split('T')[0]
+      const dueDate = dueDateObj.toISOString().slice(0, 10)
 
       // Compute totals from JSONB items
       const items    = Array.isArray(rec.items) ? rec.items : []
