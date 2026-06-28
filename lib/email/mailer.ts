@@ -20,9 +20,21 @@ export interface SendEmailResult {
   error?: string
 }
 
+const BILLCRAFT_EMAIL_DOMAIN = 'billcraft.aakasa.dev'
+
 /** Returns the configured sender address (EMAIL_FROM → RESEND_FROM_EMAIL fallback). */
 export function getEmailFrom(): string {
   return process.env.EMAIL_FROM ?? process.env.RESEND_FROM_EMAIL ?? ''
+}
+
+/**
+ * Resolves the effective "from" address for a send operation.
+ * If the user has configured an email prefix, returns prefix@billcraft.aakasa.dev.
+ * Otherwise falls back to the environment-configured sender.
+ */
+export function resolveFromAddress(emailPrefix?: string | null): string {
+  if (emailPrefix) return `${emailPrefix}@${BILLCRAFT_EMAIL_DOMAIN}`
+  return getEmailFrom()
 }
 
 /** True when the active provider has its required env vars set. */

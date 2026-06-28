@@ -27,6 +27,18 @@ export const profileSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
 })
 
+export const emailPrefixSchema = z.object({
+  email_prefix: z
+    .string()
+    .max(30, 'Must be at most 30 characters')
+    .regex(
+      /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/,
+      'Only lowercase letters, numbers, and hyphens. Must start and end with a letter or number.',
+    )
+    .min(3, 'Must be at least 3 characters')
+    .or(z.literal('')),
+})
+
 export const changePasswordSchema = z.object({
   new_password:     z.string().min(8, 'Password must be at least 8 characters'),
   confirm_password: z.string().min(8),

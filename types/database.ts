@@ -119,6 +119,7 @@ export interface User {
   name: string;
   role: UserRole;
   auth_provider: AuthProvider;
+  email_prefix: string | null;
   avatar_url: string | null;
   is_active: boolean;
   last_login_at: string | null;

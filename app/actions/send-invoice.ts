@@ -3,7 +3,7 @@
 import { createElement } from 'react'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
+import { sendEmail, isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { buildInvoiceEmail } from '@/lib/email/invoice-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
@@ -21,16 +21,17 @@ function fmtDate(d: string | null) {
 
 export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> {
   if (!isEmailConfigured()) return { error: 'Email sending is not configured.' }
-  const fromEmail = getEmailFrom()
-  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id').eq('id', user.id).single()
+    .from('users').select('organization_id, email_prefix').eq('id', user.id).single()
   if (!userRecord?.organization_id) return { error: 'No organization found' }
+
+  const fromEmail = resolveFromAddress(userRecord.email_prefix)
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const orgId = userRecord.organization_id
 

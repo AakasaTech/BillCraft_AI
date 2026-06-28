@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import {
-  orgSettingsSchema, profileSchema, changePasswordSchema,
+  orgSettingsSchema, profileSchema, changePasswordSchema, emailPrefixSchema,
   type OrgSettingsData, type ProfileData, type ChangePasswordData,
 } from '@/lib/validations/settings'
 
@@ -71,6 +71,37 @@ export async function updateProfileAction(data: ProfileData): Promise<ActionResu
 
   revalidatePath('/settings/profile')
   revalidatePath('/', 'layout')
+  return { success: true }
+}
+
+export async function updateEmailPrefixAction(raw: { email_prefix: string }): Promise<ActionResult> {
+  const parsed = emailPrefixSchema.safeParse(raw)
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? 'Invalid input' }
+
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  const prefix = parsed.data.email_prefix || null
+
+  if (prefix) {
+    const { data: existing } = await ctx.supabase
+      .from('users')
+      .select('id')
+      .eq('email_prefix', prefix)
+      .neq('id', ctx.userId)
+      .maybeSingle()
+
+    if (existing) return { error: 'That sender address is already taken. Choose a different one.' }
+  }
+
+  const { error } = await ctx.supabase
+    .from('users')
+    .update({ email_prefix: prefix })
+    .eq('id', ctx.userId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/settings/profile')
   return { success: true }
 }
 
