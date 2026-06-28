@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
       const items = itemsMap[inv.id] ?? []
 
       const pdfBuffer = await renderToBuffer(
-        createElement(InvoicePDF, { invoice: inv, items, client, org }),
+        createElement(InvoicePDF, { invoice: inv, items, client, org }) as any,
       )
 
       const shareUrl = inv.share_token && process.env.NEXT_PUBLIC_APP_URL

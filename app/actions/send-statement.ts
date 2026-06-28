@@ -107,7 +107,7 @@ export async function sendStatementAction(
     createElement(StatementPDF, {
       org, client, from_date: from, to_date: to, currency,
       entries, totalCharged, totalPaid, outstanding,
-    }),
+    }) as any,
   )
 
   const subject = `Account Statement from ${org.name} — ${fmtDate(from)} to ${fmtDate(to)}`

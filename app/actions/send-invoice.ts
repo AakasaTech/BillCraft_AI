@@ -62,7 +62,7 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
   const items              = (itemsRaw ?? []) as InvoiceItem[]
 
   const pdfBuffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }),
+    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }) as any,
   )
 
   // Build + send email

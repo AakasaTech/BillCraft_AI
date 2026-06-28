@@ -64,7 +64,7 @@ export async function sendReminderAction(id: string, aiDraftBody?: string): Prom
   const items              = (itemsRaw ?? []) as InvoiceItem[]
 
   const pdfBuffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }),
+    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }) as any,
   )
 
   const shareUrl = inv.share_token && process.env.NEXT_PUBLIC_APP_URL

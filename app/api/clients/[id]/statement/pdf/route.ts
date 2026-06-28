@@ -101,7 +101,7 @@ export async function GET(
     createElement(StatementPDF, {
       org, client, from_date: from, to_date: to, currency,
       entries, totalCharged, totalPaid, outstanding,
-    }),
+    }) as any,
   )
 
   const filename = `statement-${client.name.replace(/\s+/g, '-')}-${from}-${to}.pdf`

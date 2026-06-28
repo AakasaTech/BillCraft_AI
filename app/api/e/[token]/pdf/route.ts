@@ -42,7 +42,7 @@ export async function GET(
       items: (itemsRaw ?? []) as EstimateItem[],
       client,
       org: orgRaw as Organization,
-    }),
+    }) as any,
   )
 
   const filename = `estimate-${estimate.estimate_number}.pdf`

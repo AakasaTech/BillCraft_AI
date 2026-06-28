@@ -39,7 +39,7 @@ export async function GET(
   const org    = orgRaw as Organization
 
   const buffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org }),
+    createElement(InvoicePDF, { invoice: inv, items, client, org }) as any,
   )
 
   return new Response(buffer, {

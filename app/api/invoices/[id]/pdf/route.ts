@@ -42,7 +42,7 @@ export async function GET(
   const client = inv.clients
 
   const buffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }),
+    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }) as any,
   )
 
   return new Response(buffer, {

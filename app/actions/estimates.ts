@@ -227,7 +227,7 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
   const items              = (itemsRaw ?? []) as EstimateItem[]
 
   const pdfBuffer = await renderToBuffer(
-    createElement(EstimatePDF, { estimate, items, client, org: org as Organization }),
+    createElement(EstimatePDF, { estimate, items, client, org: org as Organization }) as any,
   )
 
   const shareUrl = estimate.share_token && process.env.NEXT_PUBLIC_APP_URL
