@@ -67,7 +67,7 @@ export default async function AuditLogPage() {
           )}
         </div>
       ) : (
-        <AuditLogTable rows={(rows ?? []) as Parameters<typeof AuditLogTable>[0]['rows']} />
+        <AuditLogTable rows={(rows ?? []) as unknown as Parameters<typeof AuditLogTable>[0]['rows']} />
       )}
     </div>
   )
