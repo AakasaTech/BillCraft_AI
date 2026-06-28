@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invoice not found.' }, { status: 404 })
   }
 
-  const clientName   = (invoice.clients as { name: string } | null)?.name ?? 'the client'
+  const clientName   = (invoice.clients as unknown as { name: string } | null)?.name ?? 'the client'
   const daysOverdue  = invoice.due_date
     ? Math.max(0, Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / 86_400_000))
     : 0

@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
   const lines: string[] = [HEADER.map(csvCell).join(',')]
 
   for (const row of (rows ?? []) as Record<string, unknown>[]) {
-    const client = row.clients as { name?: string } | null
+    const client = row.clients as unknown as { name?: string } | null
     lines.push([
       csvCell(row.invoice_number as string),
       csvCell(client?.name ?? ''),

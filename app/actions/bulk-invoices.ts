@@ -30,7 +30,7 @@ export async function bulkSendAction(ids: string[]): Promise<BulkSendResult> {
 
   const sendable = (rows ?? []).filter(r => {
     const sendableStatuses = ['draft', 'sent', 'viewed', 'overdue', 'partial']
-    const clientEmail = (r.clients as { email: string | null } | null)?.email
+    const clientEmail = (r.clients as unknown as { email: string | null } | null)?.email
     return sendableStatuses.includes(r.status) && !!clientEmail
   })
 

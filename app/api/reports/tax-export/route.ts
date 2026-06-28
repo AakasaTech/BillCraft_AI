@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   ]
 
   const csvRows = ((rows ?? []) as Record<string, unknown>[]).map((row) => {
-    const client = row.clients as { name?: string } | null
+    const client = row.clients as unknown as { name?: string } | null
     const net    = Number(row.subtotal) - Number(row.discount_amount)
     return [
       row.invoice_number,
