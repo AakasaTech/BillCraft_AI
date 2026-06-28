@@ -231,9 +231,9 @@ export default async function DashboardPage() {
     if (key in expensesByMonth) expensesByMonth[key] = (expensesByMonth[key] ?? 0) + exp.amount
   }
   const revenueData: RevenueDataPoint[] = Object.entries(revenueByMonth).map(([key, revenue]) => {
-    const [, month] = key.split('-')
+    const month = key.slice(5, 7)
     return {
-      month:    MONTH_NAMES[parseInt(month) - 1] ?? month,
+      month:    MONTH_NAMES[parseInt(month, 10) - 1] ?? month,
       revenue,
       expenses: expensesByMonth[key] ?? 0,
     }
