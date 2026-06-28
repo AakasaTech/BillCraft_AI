@@ -289,6 +289,7 @@ export function ClientDetailView({ client, invoices, stats }: ClientDetailViewPr
           preferred_currency:      client.preferred_currency,
           tax_registration_number: client.tax_registration_number,
           notes:                   client.notes,
+          cc_emails:               client.cc_emails,
         }}
       />
     </div>

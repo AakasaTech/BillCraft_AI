@@ -245,7 +245,7 @@ export function BillingOverview({
 
                   <div className="mb-1">
                     <span className="text-3xl font-bold">
-                      {plan.monthly === 0 ? 'Free' : `$${plan.monthly}`}
+                      {(plan.monthly as number) === 0 ? 'Free' : `$${plan.monthly}`}
                     </span>
                     {plan.monthly > 0 && (
                       <span className="text-sm text-muted-foreground">/month</span>
@@ -256,7 +256,7 @@ export function BillingOverview({
                       or ${plan.annual}/year — save {Math.round((1 - plan.annual / (plan.monthly * 12)) * 100)}%
                     </p>
                   )}
-                  {plan.monthly === 0 && <div className="mb-4" />}
+                  {(plan.monthly as number) === 0 && <div className="mb-4" />}
 
                   <ul className="mb-6 flex-1 space-y-2">
                     {plan.features.map((f) => (
