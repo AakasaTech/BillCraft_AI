@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
   })
 
   const date = new Date().toISOString().slice(0, 10)
-  const csv  = toCsv([HEADER, ...csvRows])
+  const csv  = toCsv([HEADER, ...csvRows] as (string | number | null | undefined)[][])
 
   return new NextResponse(csv, {
     status:  200,
