@@ -462,33 +462,34 @@ export interface InvoiceWithItems extends Invoice {
 
 // ─── Supabase Database type (used in client generics) ────────────────────────
 
-// Mapped type wrapper — gives Supabase's conditional type machinery a proper
-// index-signature so GetResult can resolve column-specific selects without
-// hitting TypeScript's instantiation-depth limit.
-type R<T> = { [K in keyof T]: T[K] }
+// Row types use Record<string, any> so Supabase's postgrest-js v2 type machinery
+// (GetResult / ProcessSimpleField) can resolve without hitting TypeScript's
+// instantiation-depth limit. Insert/Update remain strongly typed via our interfaces.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRow = Record<string, any>
 
 export type Database = {
   public: {
     Tables: {
-      organizations:         { Row: R<Organization>;        Insert: Omit<Organization,         'id' | 'created_at' | 'updated_at'>;             Update: Partial<Organization>;         Relationships: [] };
-      users:                 { Row: R<User>;                Insert: Omit<User,                 'created_at' | 'updated_at'>;                    Update: Partial<User>;                 Relationships: [] };
-      clients:               { Row: R<Client>;              Insert: Omit<Client,               'id' | 'created_at' | 'updated_at'>;             Update: Partial<Client>;               Relationships: [] };
-      invoices:              { Row: R<Invoice>;             Insert: Omit<Invoice,              'id' | 'amount_due' | 'created_at' | 'updated_at'>; Update: Partial<Invoice>;           Relationships: [] };
-      invoice_items:         { Row: R<InvoiceItem>;         Insert: Omit<InvoiceItem,          'id' | 'created_at' | 'updated_at'>;             Update: Partial<InvoiceItem>;          Relationships: [] };
-      payments:              { Row: R<Payment>;             Insert: Omit<Payment,              'id' | 'created_at' | 'updated_at'>;             Update: Partial<Payment>;              Relationships: [] };
-      subscriptions:         { Row: R<Subscription>;        Insert: Omit<Subscription,         'id' | 'created_at' | 'updated_at'>;             Update: Partial<Subscription>;         Relationships: [] };
-      email_logs:            { Row: R<EmailLog>;            Insert: Omit<EmailLog,             'id' | 'created_at'>;                            Update: Partial<EmailLog>;             Relationships: [] };
-      ai_requests:           { Row: R<AiRequest>;           Insert: Omit<AiRequest,            'id' | 'total_tokens' | 'created_at'>;           Update: Partial<AiRequest>;            Relationships: [] };
-      audit_logs:            { Row: R<AuditLog>;            Insert: Omit<AuditLog,             'id' | 'created_at'>;                            Update: never;                         Relationships: [] };
-      invitations:           { Row: R<Invitation>;          Insert: Omit<Invitation,           'id' | 'created_at'>;                            Update: Partial<Invitation>;           Relationships: [] };
-      recurring_invoices:    { Row: R<RecurringInvoice>;    Insert: Omit<RecurringInvoice,     'id' | 'created_at' | 'updated_at'>;             Update: Partial<RecurringInvoice>;     Relationships: [] };
-      expenses:              { Row: R<Expense>;             Insert: Omit<Expense,              'id' | 'created_at' | 'updated_at'>;             Update: Partial<Expense>;              Relationships: [] };
-      invoice_templates:     { Row: R<InvoiceTemplate>;     Insert: Omit<InvoiceTemplate,      'id' | 'created_at' | 'updated_at'>;             Update: Partial<InvoiceTemplate>;      Relationships: [] };
-      invoice_template_items:{ Row: R<InvoiceTemplateItem>; Insert: Omit<InvoiceTemplateItem,  'id'>;                                           Update: Partial<InvoiceTemplateItem>;  Relationships: [] };
-      products:              { Row: R<Product>;             Insert: Omit<Product,              'id' | 'created_at' | 'updated_at'>;             Update: Partial<Product>;              Relationships: [] };
-      estimates:             { Row: R<Estimate>;            Insert: Omit<Estimate,             'id' | 'created_at' | 'updated_at'>;             Update: Partial<Estimate>;             Relationships: [] };
-      estimate_items:        { Row: R<EstimateItem>;        Insert: Omit<EstimateItem,         'id'>;                                           Update: Partial<EstimateItem>;         Relationships: [] };
-      email_templates:       { Row: R<EmailTemplate>;       Insert: Omit<EmailTemplate,        'id' | 'created_at' | 'updated_at'>;             Update: Partial<EmailTemplate>;        Relationships: [] };
+      organizations:         { Row: AnyRow; Insert: Omit<Organization,         'id' | 'created_at' | 'updated_at'>;             Update: Partial<Organization>;         Relationships: [] };
+      users:                 { Row: AnyRow; Insert: Omit<User,                 'created_at' | 'updated_at'>;                    Update: Partial<User>;                 Relationships: [] };
+      clients:               { Row: AnyRow; Insert: Omit<Client,               'id' | 'created_at' | 'updated_at'>;             Update: Partial<Client>;               Relationships: [] };
+      invoices:              { Row: AnyRow; Insert: Omit<Invoice,              'id' | 'amount_due' | 'created_at' | 'updated_at'>; Update: Partial<Invoice>;           Relationships: [] };
+      invoice_items:         { Row: AnyRow; Insert: Omit<InvoiceItem,          'id' | 'created_at' | 'updated_at'>;             Update: Partial<InvoiceItem>;          Relationships: [] };
+      payments:              { Row: AnyRow; Insert: Omit<Payment,              'id' | 'created_at' | 'updated_at'>;             Update: Partial<Payment>;              Relationships: [] };
+      subscriptions:         { Row: AnyRow; Insert: Omit<Subscription,         'id' | 'created_at' | 'updated_at'>;             Update: Partial<Subscription>;         Relationships: [] };
+      email_logs:            { Row: AnyRow; Insert: Omit<EmailLog,             'id' | 'created_at'>;                            Update: Partial<EmailLog>;             Relationships: [] };
+      ai_requests:           { Row: AnyRow; Insert: Omit<AiRequest,            'id' | 'total_tokens' | 'created_at'>;           Update: Partial<AiRequest>;            Relationships: [] };
+      audit_logs:            { Row: AnyRow; Insert: Omit<AuditLog,             'id' | 'created_at'>;                            Update: never;                         Relationships: [] };
+      invitations:           { Row: AnyRow; Insert: Omit<Invitation,           'id' | 'created_at'>;                            Update: Partial<Invitation>;           Relationships: [] };
+      recurring_invoices:    { Row: AnyRow; Insert: Omit<RecurringInvoice,     'id' | 'created_at' | 'updated_at'>;             Update: Partial<RecurringInvoice>;     Relationships: [] };
+      expenses:              { Row: AnyRow; Insert: Omit<Expense,              'id' | 'created_at' | 'updated_at'>;             Update: Partial<Expense>;              Relationships: [] };
+      invoice_templates:     { Row: AnyRow; Insert: Omit<InvoiceTemplate,      'id' | 'created_at' | 'updated_at'>;             Update: Partial<InvoiceTemplate>;      Relationships: [] };
+      invoice_template_items:{ Row: AnyRow; Insert: Omit<InvoiceTemplateItem,  'id'>;                                           Update: Partial<InvoiceTemplateItem>;  Relationships: [] };
+      products:              { Row: AnyRow; Insert: Omit<Product,              'id' | 'created_at' | 'updated_at'>;             Update: Partial<Product>;              Relationships: [] };
+      estimates:             { Row: AnyRow; Insert: Omit<Estimate,             'id' | 'created_at' | 'updated_at'>;             Update: Partial<Estimate>;             Relationships: [] };
+      estimate_items:        { Row: AnyRow; Insert: Omit<EstimateItem,         'id'>;                                           Update: Partial<EstimateItem>;         Relationships: [] };
+      email_templates:       { Row: AnyRow; Insert: Omit<EmailTemplate,        'id' | 'created_at' | 'updated_at'>;             Update: Partial<EmailTemplate>;        Relationships: [] };
     };
     Views: {};
     Functions: {
