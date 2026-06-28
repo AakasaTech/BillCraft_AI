@@ -106,7 +106,7 @@ export async function GET(
 
   const filename = `statement-${client.name.replace(/\s+/g, '-')}-${from}-${to}.pdf`
 
-  return new Response(buffer, {
+  return new Response(new Uint8Array(buffer), {
     headers: {
       'Content-Type':        'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}"`,

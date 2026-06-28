@@ -42,7 +42,7 @@ export async function GET(
     createElement(InvoicePDF, { invoice: inv, items, client, org }) as any,
   )
 
-  return new Response(buffer, {
+  return new Response(new Uint8Array(buffer), {
     headers: {
       'Content-Type':        'application/pdf',
       'Content-Disposition': `attachment; filename="invoice-${inv.invoice_number}.pdf"`,
