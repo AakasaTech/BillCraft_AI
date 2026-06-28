@@ -7,15 +7,13 @@ function postForm(url: string, params: Record<string, string>): Promise<Record<s
   const parsed = new URL(url)
   return new Promise((resolve, reject) => {
     const req = https.request(
+      parsed,
       {
-        hostname: parsed.hostname,
-        path:     parsed.pathname,
-        method:   'POST',
-        headers:  {
+        method:  'POST',
+        headers: {
           'Content-Type':   'application/x-www-form-urlencoded',
           'Content-Length': Buffer.byteLength(body),
         },
-        keepAlive: false,
       },
       (res) => {
         let raw = ''
@@ -37,16 +35,14 @@ function postJson(url: string, body: unknown, token: string): Promise<Record<str
   const parsed = new URL(url)
   return new Promise((resolve, reject) => {
     const req = https.request(
+      parsed,
       {
-        hostname: parsed.hostname,
-        path:     parsed.pathname,
-        method:   'POST',
-        headers:  {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type':  'application/json',
+        method:  'POST',
+        headers: {
+          'Authorization':  `Bearer ${token}`,
+          'Content-Type':   'application/json',
           'Content-Length': Buffer.byteLength(data),
         },
-        keepAlive: false,
       },
       (res) => {
         let raw = ''

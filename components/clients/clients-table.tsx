@@ -43,6 +43,7 @@ type ClientRow = Pick<
   | 'postal_code'
   | 'tax_registration_number'
   | 'notes'
+  | 'cc_emails'
   | 'created_at'
 > & {
   invoiceCount: number

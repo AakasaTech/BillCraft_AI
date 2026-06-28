@@ -59,7 +59,7 @@ export function RevenueChart({ data, currency }: RevenueChartProps) {
           width={52}
         />
         <Tooltip
-          formatter={(value: number, name: string) => [fmt(value, currency), name === 'revenue' ? 'Revenue' : 'Expenses']}
+          formatter={(value, name) => [fmt(value as number, currency), (name as string) === 'revenue' ? 'Revenue' : 'Expenses']}
           contentStyle={{
             fontSize:        12,
             borderRadius:    8,

@@ -32,7 +32,7 @@ export function AiReminderDialog({
 
   async function fetchDraft() {
     if (!canUseAI) {
-      setDraft(DEFAULT_BODIES.reminder)
+      setDraft(DEFAULT_BODIES.reminder ?? '')
       return
     }
     setIsDrafting(true)
@@ -46,13 +46,13 @@ export function AiReminderDialog({
       const data = await res.json() as { body?: string; error?: string }
       if (!res.ok || data.error) {
         setDraftError(data.error ?? 'Failed to draft reminder.')
-        setDraft(DEFAULT_BODIES.reminder)
+        setDraft(DEFAULT_BODIES.reminder ?? '')
       } else {
-        setDraft(data.body ?? DEFAULT_BODIES.reminder)
+        setDraft(data.body ?? DEFAULT_BODIES.reminder ?? '')
       }
     } catch {
       setDraftError('Network error. You can still edit and send the default message.')
-      setDraft(DEFAULT_BODIES.reminder)
+      setDraft(DEFAULT_BODIES.reminder ?? '')
     } finally {
       setIsDrafting(false)
     }

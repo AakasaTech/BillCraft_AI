@@ -57,7 +57,7 @@ export function InvoiceBreakdown({ data }: { data: BreakdownItem[] }) {
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number, name: string) => [value, name]}
+          formatter={(value, name) => [value as number, name as string]}
           contentStyle={{
             fontSize:        12,
             borderRadius:    8,

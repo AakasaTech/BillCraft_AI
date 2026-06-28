@@ -21,6 +21,7 @@ export function verifyPortalSession(cookie: string): string | null {
   const parts = cookie.split('|')
   if (parts.length !== 3) return null
   const [clientId, expiresAt, sig] = parts
+  if (!clientId || !expiresAt || !sig) return null
   const payload  = `${clientId}|${expiresAt}`
   const expected = createHmac('sha256', SECRET).update(payload).digest('hex')
   try {
