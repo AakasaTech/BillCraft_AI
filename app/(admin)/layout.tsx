@@ -21,8 +21,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Sidebar */}
       <aside className="flex w-56 flex-col border-r border-white/10 bg-gray-900">
         <div className="border-b border-white/10 px-5 py-5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">BillCraft AI</p>
-          <p className="mt-0.5 text-sm font-semibold text-white">Admin Panel</p>
+          <div className="flex items-center gap-2.5">
+            <img src="/app_icon.png" alt="BillCraft AI" className="h-7 w-auto shrink-0" />
+            <div>
+              <p className="text-xs font-bold leading-tight text-white">BillCraft AI</p>
+              <p className="text-[10px] text-gray-400">Admin Panel</p>
+            </div>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-0.5 px-3 py-4">

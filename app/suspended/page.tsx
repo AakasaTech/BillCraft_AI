@@ -9,6 +9,9 @@ export default function SuspendedPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-6">
       <div className="text-center max-w-md">
+        <div className="mb-8 flex justify-center">
+          <img src="/logo.png" alt="BillCraft AI" className="h-10 w-auto" />
+        </div>
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
           <svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
