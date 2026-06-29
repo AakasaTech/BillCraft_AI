@@ -27,13 +27,15 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
   if (!user) return { error: 'Not authenticated' }
 
   const { data: userRecord } = await supabase
-    .from('users').select('organization_id, email_prefix').eq('id', user.id).single()
+    .from('users').select('organization_id').eq('id', user.id).single()
   if (!userRecord?.organization_id) return { error: 'No organization found' }
 
-  const fromEmail = resolveFromAddress(userRecord.email_prefix)
-  if (!fromEmail) return { error: 'Sender email is not configured.' }
-
   const orgId = userRecord.organization_id
+
+  const { data: prefixRow } = await supabase
+    .from('users').select('email_prefix').eq('id', user.id).single()
+  const fromEmail = resolveFromAddress(prefixRow?.email_prefix)
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const [{ data: invoice }, { data: itemsRaw }, { data: org }, { data: emailTpl }] = await Promise.all([
     supabase
