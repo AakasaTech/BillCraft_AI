@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     pathname === '/'                      ||
     isAuthRoute                           ||
+    pathname.startsWith('/auth/')         ||
     pathname === '/suspended'             ||
     pathname.startsWith('/p/')            ||
     pathname.startsWith('/e/')            ||
