@@ -7,8 +7,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="BillCraft AI" className="h-24 w-auto" />
+          <Link href="/" className="flex items-center gap-2.5">
+            <img src="/app_icon.png" alt="" aria-hidden="true" className="h-8 w-auto" />
+            <span className="text-lg font-bold tracking-tight text-foreground">BillCraft AI</span>
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link href="/#features"     className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
@@ -31,7 +32,10 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       {/* Footer */}
       <footer className="border-t border-border px-6 py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <img src="/logo.png" alt="BillCraft AI" className="h-16 w-auto" />
+          <div className="flex items-center gap-2">
+            <img src="/app_icon.png" alt="" aria-hidden="true" className="h-7 w-auto" />
+            <span className="text-base font-bold text-foreground">BillCraft AI</span>
+          </div>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} BillCraft AI. All rights reserved.
           </p>
