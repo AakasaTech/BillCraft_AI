@@ -16,6 +16,7 @@ import {
   DollarSign,
   AlertCircle,
 } from 'lucide-react';
+import { PricingSection } from '@/components/shared/PricingSection';
 
 // ─── Feature strip (below hero) ───────────────────────────────────────────────
 
@@ -80,72 +81,6 @@ const features = [
     title: 'Revenue Analytics',
     description:
       'Track outstanding invoices, monthly revenue, and overdue amounts at a glance on your dashboard.',
-  },
-];
-
-// ─── Pricing ──────────────────────────────────────────────────────────────────
-
-const plans = [
-  {
-    name:        'Basic',
-    price:       '$9',
-    period:      'per month',
-    annual:      '$79 / year — save 27%',
-    description: 'For freelancers just getting started.',
-    features: [
-      '5 clients',
-      '20 invoices per month',
-      'PDF download & email',
-      'Payment tracking',
-      'Basic support',
-    ],
-    cta:         'Start free trial',
-    href:        '/register',
-    highlighted: false,
-    badge:       null,
-  },
-  {
-    name:        'Pro',
-    price:       '$19',
-    period:      'per month',
-    annual:      '$190 / year — save 17%',
-    description: 'For active freelancers and solo consultants.',
-    features: [
-      'Unlimited clients',
-      'Unlimited invoices',
-      'AI invoice generation',
-      'Expense tracking & P&L reports',
-      'Recurring invoices',
-      'Invoice templates',
-      'Multi-currency support',
-      'PDF branded with your logo',
-      'Email delivery + tracking',
-      'Overdue reminders',
-      'Revenue analytics',
-    ],
-    cta:         'Start free trial',
-    href:        '/register',
-    highlighted: true,
-    badge:       'Most popular',
-  },
-  {
-    name:        'Agency',
-    price:       '$39',
-    period:      'per month',
-    annual:      '$390 / year — save 17%',
-    description: 'For agencies and teams billing multiple clients.',
-    features: [
-      'Everything in Pro',
-      'Multiple team members',
-      'Multi-org management',
-      'White-label PDFs',
-      'API access',
-      'Dedicated support',
-    ],
-    cta:         'Start free trial',
-    href:        '/register',
-    highlighted: false,
-    badge:       null,
   },
 ];
 
@@ -474,74 +409,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Pricing ──────────────────────────────────────────────────────────── */}
-        <section id="pricing" className="border-t border-border px-6 py-24">
-          <div className="mx-auto max-w-7xl">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Simple, transparent pricing
-              </h2>
-              <p className="mt-4 text-muted-foreground">
-                60-day free trial on every account — no credit card required.
-              </p>
-            </div>
-            <div className="mt-16 grid gap-6 sm:grid-cols-3">
-              {plans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`relative flex flex-col rounded-2xl border p-8 ${
-                    plan.highlighted
-                      ? 'border-primary bg-primary text-primary-foreground shadow-2xl scale-105'
-                      : 'border-border bg-card'
-                  }`}
-                >
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-primary-foreground px-4 py-0.5 text-xs font-semibold text-primary">
-                      {plan.badge}
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="text-lg font-semibold">{plan.name}</h3>
-                    <div className="mt-4 flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      <span className={`text-sm ${plan.highlighted ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                        / {plan.period}
-                      </span>
-                    </div>
-                    {plan.annual && (
-                      <p className={`mt-1 text-xs ${plan.highlighted ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
-                        or {plan.annual}
-                      </p>
-                    )}
-                    <p className={`mt-2 text-sm ${plan.highlighted ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                      {plan.description}
-                    </p>
-                  </div>
-                  <ul className="mt-8 flex-1 space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm">
-                        <Check className={`mt-0.5 h-4 w-4 shrink-0 ${plan.highlighted ? 'text-primary-foreground' : 'text-primary'}`} />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href={plan.href}
-                    className={`mt-8 block rounded-xl px-6 py-3 text-center text-sm font-semibold transition-all ${
-                      plan.highlighted
-                        ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90'
-                        : 'bc-btn-primary text-white'
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                </div>
-              ))}
-            </div>
-            <p className="mt-8 text-center text-xs text-muted-foreground">
-              All plans include a 60-day free trial — no credit card required. Upgrade or cancel any time.
-            </p>
-          </div>
-        </section>
+        <PricingSection />
 
         {/* ── CTA strip ────────────────────────────────────────────────────────── */}
         <section className="border-t border-border bg-muted/30 px-6 py-20 text-center">
