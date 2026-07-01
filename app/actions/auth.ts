@@ -99,19 +99,19 @@ export async function logoutAction(): Promise<void> {
 }
 
 export async function signInWithGoogleAction(): Promise<ActionState> {
-  // Custom OAuth flow — shows billcraft.aakasa.dev on Google's account chooser
-  // instead of the Supabase project URL.
-  //
-  // To revert to Supabase's built-in provider (e.g. after enabling a Supabase
-  // custom domain on the Pro plan), replace this redirect with:
-  //
-  //   const supabase = await createClient()
-  //   const { data, error } = await supabase.auth.signInWithOAuth({
-  //     provider: 'google',
-  //     options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback` },
-  //   })
-  //   if (error) return { error: error.message }
-  //   if (data.url) redirect(data.url)
-  //   return { error: 'Failed to start Google sign-in.' }
+  // Set GOOGLE_AUTH_FLOW=supabase to use Supabase's built-in provider
+  // (e.g. after enabling a custom domain on Supabase Pro).
+  // Default is "custom" — shows billcraft.aakasa.dev on Google's account chooser.
+  if (process.env.GOOGLE_AUTH_FLOW === 'supabase') {
+    const supabase = await createClient()
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback` },
+    })
+    if (error) return { error: error.message }
+    if (data.url) redirect(data.url)
+    return { error: 'Failed to start Google sign-in.' }
+  }
+
   redirect('/api/auth/google')
 }
