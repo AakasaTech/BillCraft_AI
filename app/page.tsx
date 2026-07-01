@@ -418,6 +418,12 @@ export default function LandingPage() {
             Start your free trial
             <ArrowRight className="h-4 w-4" />
           </Link>
+          <p className="mt-6 text-xs text-muted-foreground">
+            By signing up you agree to our{' '}
+            <Link href="/terms" className="underline hover:text-foreground transition-colors">Terms of Service</Link>
+            {' '}and{' '}
+            <Link href="/privacy" className="underline hover:text-foreground transition-colors">Privacy Policy</Link>.
+          </p>
         </section>
 
       </main>
@@ -433,8 +439,8 @@ export default function LandingPage() {
             © {new Date().getFullYear()} BillCraft AI. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
           </div>
         </div>
       </footer>
