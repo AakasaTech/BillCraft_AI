@@ -25,9 +25,9 @@ export async function GET(request: Request) {
   // State — CSRF protection
   const state = b64url(crypto.randomBytes(16))
 
-  // Nonce — stored raw, sent hashed; Supabase verifies it in the ID token
+  // Nonce — stored raw, sent hashed; Supabase (GoTrue) rehashes as hex(sha256(raw)) to verify
   const rawNonce    = b64url(crypto.randomBytes(16))
-  const hashedNonce = b64url(crypto.createHash('sha256').update(rawNonce).digest())
+  const hashedNonce = crypto.createHash('sha256').update(rawNonce).digest('hex')
 
   const googleUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
   googleUrl.searchParams.set('client_id',              clientId)
