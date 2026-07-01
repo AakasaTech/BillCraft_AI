@@ -138,8 +138,8 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-4 text-muted-foreground">
               To exercise any of these rights, email us at{' '}
-              <a href="mailto:privacy@billcraft.ai" className="text-primary hover:underline">
-                privacy@billcraft.ai
+              <a href="mailto:privacy@aakasa.dev" className="text-primary hover:underline">
+                privacy@aakasa.dev
               </a>.
             </p>
           </section>
@@ -186,8 +186,8 @@ export default function PrivacyPage() {
               <p className="font-medium text-foreground">BillCraft AI</p>
               <p>
                 Email:{' '}
-                <a href="mailto:privacy@billcraft.ai" className="text-primary hover:underline">
-                  privacy@billcraft.ai
+                <a href="mailto:privacy@aakasa.dev" className="text-primary hover:underline">
+                  privacy@aakasa.dev
                 </a>
               </p>
               <p>

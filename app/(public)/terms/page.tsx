@@ -214,8 +214,8 @@ export default function TermsPage() {
               <p className="font-medium text-foreground">BillCraft AI</p>
               <p>
                 Email:{' '}
-                <a href="mailto:legal@billcraft.ai" className="text-primary hover:underline">
-                  legal@billcraft.ai
+                <a href="mailto:legal@aakasa.dev" className="text-primary hover:underline">
+                  legal@aakasa.dev
                 </a>
               </p>
               <p>
