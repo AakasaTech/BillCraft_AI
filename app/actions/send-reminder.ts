@@ -21,7 +21,36 @@ function fmtDate(d: string | null) {
 
 const REMINDER_STATUSES = ['sent', 'viewed', 'partial', 'overdue']
 
+/**
+ * Fetches the org logo and returns it as a base64 data URL so react-pdf
+ * doesn't need to make outbound HTTP requests at render time.
+ * Falls back to logo_url: null on any error (PDF renders without logo).
+ */
+async function resolveLogo(org: Organization): Promise<Organization> {
+  if (!org.logo_url) return org
+  try {
+    const res = await fetch(org.logo_url, { signal: AbortSignal.timeout(5000) })
+    if (!res.ok) return { ...org, logo_url: null }
+    const buf         = Buffer.from(await res.arrayBuffer())
+    const contentType = res.headers.get('content-type') ?? 'image/png'
+    const dataUrl     = `data:${contentType};base64,${buf.toString('base64')}`
+    return { ...org, logo_url: dataUrl }
+  } catch {
+    return { ...org, logo_url: null }
+  }
+}
+
 export async function sendReminderAction(id: string, aiDraftBody?: string): Promise<ActionResult> {
+  try {
+    return await _sendReminderAction(id, aiDraftBody)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[sendReminderAction] unhandled error:', message)
+    return { error: `Failed to send reminder: ${message}` }
+  }
+}
+
+async function _sendReminderAction(id: string, aiDraftBody?: string): Promise<ActionResult> {
   if (!isEmailConfigured()) return { error: 'Email sending is not configured.' }
 
   const supabase = await createClient()
@@ -65,8 +94,12 @@ export async function sendReminderAction(id: string, aiDraftBody?: string): Prom
   const { InvoicePDF }     = await import('@/lib/pdf/invoice-pdf')
   const items              = (itemsRaw ?? []) as InvoiceItem[]
 
+  // Pre-fetch the org logo so react-pdf doesn't try to fetch it at render time.
+  // If the fetch fails (private bucket, network issue) we fall back to no logo.
+  const orgWithLogo = await resolveLogo(org as Organization)
+
   const pdfBuffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }) as any,
+    createElement(InvoicePDF, { invoice: inv, items, client, org: orgWithLogo }) as any,
   )
 
   const shareUrl = inv.share_token && process.env.NEXT_PUBLIC_APP_URL
