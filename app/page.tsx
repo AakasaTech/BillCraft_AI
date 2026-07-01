@@ -162,28 +162,29 @@ export default function LandingPage() {
                 {/* Badge */}
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#1D8CFF]/25 bg-[#1D8CFF]/8 px-3.5 py-1.5 text-xs font-semibold text-[#1D8CFF]">
                   <Sparkles className="h-3 w-3" />
-                  BillCraft AI — AI-Powered Invoicing
+                  AI-Powered Invoicing Platform
                 </div>
 
-                {/* Headline */}
-                <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl lg:text-[3.5rem] lg:leading-[1.15]">
-                  Smarter Billing.
-                  <br />
-                  <span
-                    style={{
-                      background:            'linear-gradient(135deg, #1D8CFF 0%, #2563EB 100%)',
-                      WebkitBackgroundClip:  'text',
-                      WebkitTextFillColor:   'transparent',
-                      backgroundClip:        'text',
-                    }}
-                  >
-                    Stronger Business.
-                  </span>
+                {/* App name — primary heading Google can read */}
+                <h1 className="mt-5 text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl"
+                  style={{
+                    background:           'linear-gradient(135deg, #1D8CFF 0%, #2563EB 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor:  'transparent',
+                    backgroundClip:       'text',
+                  }}
+                >
+                  BillCraft AI
                 </h1>
 
-                {/* Description */}
-                <p className="mt-6 max-w-[480px] text-lg leading-relaxed text-muted-foreground">
-                  BillCraft AI simplifies invoicing, automates workflows, and helps businesses get paid faster. Save time, reduce errors, and grow your business.
+                {/* Tagline */}
+                <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  Smarter Billing. Stronger Business.
+                </p>
+
+                {/* Purpose — explicit for Google verification */}
+                <p className="mt-5 max-w-[480px] text-lg leading-relaxed text-muted-foreground">
+                  BillCraft AI is an AI-powered invoicing and billing platform for freelancers, consultants, and agencies. Create professional invoices instantly, automate payment reminders, track expenses, and get paid faster.
                 </p>
 
                 {/* CTAs */}
