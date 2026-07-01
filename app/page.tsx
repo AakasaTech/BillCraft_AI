@@ -165,15 +165,8 @@ export default function LandingPage() {
                   AI-Powered Invoicing Platform
                 </div>
 
-                {/* App name — primary heading Google can read */}
-                <h1 className="mt-5 text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl"
-                  style={{
-                    background:           'linear-gradient(135deg, #1D8CFF 0%, #2563EB 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor:  'transparent',
-                    backgroundClip:       'text',
-                  }}
-                >
+                {/* App name — primary heading (solid colour so crawlers can read it) */}
+                <h1 className="mt-5 text-5xl font-extrabold tracking-tight text-[#1D8CFF] sm:text-6xl lg:text-7xl">
                   BillCraft AI
                 </h1>
 

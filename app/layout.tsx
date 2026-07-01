@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: '%s | BillCraft AI',
   },
   description:
-    'Smarter Billing. Stronger Business. AI-powered invoicing for freelancers and agencies.',
+    'BillCraft AI is an AI-powered invoicing and billing platform for freelancers, consultants, and agencies. Create professional invoices instantly, automate payment reminders, track expenses, and get paid faster.',
   keywords: ['invoicing', 'AI', 'freelancer', 'billing', 'invoice generator'],
   icons: {
     icon: [
