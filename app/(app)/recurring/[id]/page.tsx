@@ -86,6 +86,7 @@ export default async function RecurringDetailPage({
         id={id}
         clients={clients ?? []}
         defaultCurrency={org?.default_currency ?? 'USD'}
+        savedPaymentInstructions={(org?.payment_instructions ?? []) as { name: string; content: string }[]}
         defaultValues={{
           client_id:            rec.client_id,
           title:                rec.title ?? '',

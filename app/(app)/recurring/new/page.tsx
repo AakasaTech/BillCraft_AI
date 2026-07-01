@@ -36,6 +36,7 @@ export default async function NewRecurringPage() {
       <RecurringForm
         clients={clients ?? []}
         defaultCurrency={org?.default_currency ?? 'USD'}
+        savedPaymentInstructions={(org?.payment_instructions ?? []) as { name: string; content: string }[]}
       />
     </div>
   )

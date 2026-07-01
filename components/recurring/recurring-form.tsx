@@ -4,7 +4,7 @@ import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, Trash2 } from 'lucide-react'
+import { BookOpen, PlusIcon, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -43,15 +43,17 @@ const SELECT_CLS =
   'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50'
 
 interface Client { id: string; name: string }
+interface PaymentInstructionTemplate { name: string; content: string }
 
 interface RecurringFormProps {
-  clients:         Client[]
-  defaultCurrency: string
-  id?:             string
-  defaultValues?:  Partial<RecurringFormData>
+  clients:                     Client[]
+  defaultCurrency:             string
+  id?:                         string
+  defaultValues?:              Partial<RecurringFormData>
+  savedPaymentInstructions?:   PaymentInstructionTemplate[]
 }
 
-export function RecurringForm({ clients, defaultCurrency, id, defaultValues }: RecurringFormProps) {
+export function RecurringForm({ clients, defaultCurrency, id, defaultValues, savedPaymentInstructions = [] }: RecurringFormProps) {
   const router  = useRouter()
   const [error, setError] = useState<string | null>(null)
   const isEdit  = !!id
@@ -311,7 +313,30 @@ export function RecurringForm({ clients, defaultCurrency, id, defaultValues }: R
             <Textarea id="notes" rows={3} placeholder="Internal notes…" {...form.register('notes')} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="payment_instructions">Payment instructions</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="payment_instructions">Payment instructions</Label>
+              {savedPaymentInstructions.length > 0 && (
+                <div className="relative">
+                  <select
+                    className="appearance-none rounded-md border bg-background px-2 py-1 pr-6 text-xs text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                    defaultValue=""
+                    onChange={e => {
+                      const tpl = savedPaymentInstructions.find(t => t.name === e.target.value)
+                      if (tpl) {
+                        form.setValue('payment_instructions', tpl.content, { shouldDirty: true })
+                        e.target.value = ''
+                      }
+                    }}
+                  >
+                    <option value="" disabled>Load template</option>
+                    {savedPaymentInstructions.map(t => (
+                      <option key={t.name} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                  <BookOpen className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                </div>
+              )}
+            </div>
             <Textarea
               id="payment_instructions" rows={3}
               placeholder="Bank details, payment link…"
