@@ -5,6 +5,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin-auth'
 import { Building2, Users, TrendingUp, Activity, DollarSign, Clock } from 'lucide-react'
 
+export const metadata = { title: 'Admin — BillCraft AI', robots: 'noindex, nofollow' }
+
 function fmt(n: number | null | undefined) {
   return (n ?? 0).toLocaleString()
 }

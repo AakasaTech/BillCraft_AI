@@ -2,7 +2,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Account Suspended — BillCraft AI',
+  title:  'Account Suspended — BillCraft AI',
+  robots: 'noindex',
 }
 
 export default function SuspendedPage() {

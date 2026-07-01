@@ -6,7 +6,7 @@ import { getPlanStatus } from '@/lib/subscription'
 import { EmailTemplateEditor } from '@/components/settings/email-template-editor'
 import type { EmailTemplate, EmailTemplateType } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Email Templates — Settings' }
+export const metadata: Metadata = { title: 'Email Templates — BillCraft AI' }
 
 const TABS: { value: EmailTemplateType; label: string; description: string }[] = [
   {

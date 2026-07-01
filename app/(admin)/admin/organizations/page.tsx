@@ -5,6 +5,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin-auth'
 import { ChevronRight, Gift } from 'lucide-react'
 
+export const metadata = { title: 'Organizations — Admin', robots: 'noindex, nofollow' }
+
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { dateStyle: 'medium' })

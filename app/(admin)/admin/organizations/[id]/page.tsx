@@ -6,6 +6,8 @@ import { GrantFreepassDialog } from './grant-freepass-dialog'
 import { ChevronLeft, Gift } from 'lucide-react'
 import type { Organization, Subscription, User } from '@/types/database'
 
+export const metadata = { title: 'Organization Detail — Admin', robots: 'noindex, nofollow' }
+
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-US', { dateStyle: 'medium' })

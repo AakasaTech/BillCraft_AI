@@ -1,0 +1,34 @@
+User-agent: *
+
+# Marketing & public pages — allow
+Allow: /$
+Allow: /login
+Allow: /register
+Allow: /privacy
+Allow: /terms
+
+# Authenticated app routes — disallow
+Disallow: /dashboard
+Disallow: /invoices
+Disallow: /estimates
+Disallow: /clients
+Disallow: /expenses
+Disallow: /products
+Disallow: /recurring
+Disallow: /reports
+Disallow: /templates
+Disallow: /billing
+Disallow: /settings
+Disallow: /onboard
+Disallow: /suspended
+Disallow: /admin
+
+# API & token routes — disallow
+Disallow: /api/
+Disallow: /auth/
+Disallow: /p/
+Disallow: /e/
+Disallow: /portal/
+Disallow: /invite/
+
+Sitemap: https://billcraft.aakasa.dev/sitemap.xml

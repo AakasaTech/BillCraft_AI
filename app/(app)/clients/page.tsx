@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { ClientsTable } from '@/components/clients/clients-table'
 
-export const metadata: Metadata = { title: 'Clients' }
+export const metadata: Metadata = { title: 'Clients — BillCraft AI' }
 
 export default async function ClientsPage() {
   const supabase = await createClient()

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { OnboardForm } from '@/components/auth/onboard-form'
 
-export const metadata: Metadata = { title: 'Set up your workspace' }
+export const metadata: Metadata = { title: 'Set Up Your Workspace — BillCraft AI', robots: 'noindex' }
 
 export default async function OnboardPage() {
   const supabase = await createClient()

@@ -2,7 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { LoginForm } from '@/components/auth/login-form'
 
-export const metadata: Metadata = { title: 'Sign in' }
+export const metadata: Metadata = {
+  title:       'Sign In — BillCraft AI',
+  description: 'Sign in to BillCraft AI to manage your invoices, clients, and billing.',
+  robots:      'noindex',
+}
 
 export default function LoginPage({
   searchParams,

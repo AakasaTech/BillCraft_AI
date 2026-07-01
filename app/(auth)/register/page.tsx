@@ -2,7 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { RegisterForm } from '@/components/auth/register-form'
 
-export const metadata: Metadata = { title: 'Create account' }
+export const metadata: Metadata = {
+  title:       'Create Account — BillCraft AI',
+  description: 'Create a free BillCraft AI account and start sending professional invoices in minutes.',
+  robots:      'noindex',
+}
 
 export default function RegisterPage() {
   return (

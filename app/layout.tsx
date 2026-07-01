@@ -11,13 +11,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://billcraft.aakasa.dev'),
   title: {
-    default: 'BillCraft AI — Intelligent Billing for Modern Businesses',
+    default:  'BillCraft AI — Intelligent Billing for Modern Businesses',
     template: '%s | BillCraft AI',
   },
   description:
     'BillCraft AI is an AI-powered invoicing and billing platform for freelancers, consultants, and agencies. Create professional invoices instantly, automate payment reminders, track expenses, and get paid faster.',
-  keywords: ['invoicing', 'AI', 'freelancer', 'billing', 'invoice generator'],
+  keywords: ['invoicing', 'AI invoicing', 'freelancer billing', 'invoice generator', 'billing software'],
   icons: {
     icon: [
       { url: '/favicon.ico',        sizes: 'any' },
@@ -28,15 +29,19 @@ export const metadata: Metadata = {
     other: [{ rel: 'manifest', url: '/site.webmanifest' }],
   },
   openGraph: {
-    type:    'website',
-    locale:  'en_US',
-    url:     process.env.NEXT_PUBLIC_APP_URL,
-    siteName: 'BillCraft AI',
-    images:  [{ url: '/android-chrome-512x512.png', width: 512, height: 512 }],
+    type:        'website',
+    locale:      'en_US',
+    url:         process.env.NEXT_PUBLIC_APP_URL,
+    siteName:    'BillCraft AI',
+    title:       'BillCraft AI — Intelligent Billing for Modern Businesses',
+    description: 'AI-powered invoicing and billing platform for freelancers, consultants, and agencies.',
+    images:      [{ url: '/android-chrome-512x512.png', width: 512, height: 512, alt: 'BillCraft AI' }],
   },
   twitter: {
-    card:   'summary_large_image',
-    images: ['/android-chrome-512x512.png'],
+    card:        'summary',
+    title:       'BillCraft AI — Intelligent Billing for Modern Businesses',
+    description: 'AI-powered invoicing and billing platform for freelancers, consultants, and agencies.',
+    images:      ['/android-chrome-512x512.png'],
   },
 };
 
