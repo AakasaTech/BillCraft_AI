@@ -8,7 +8,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-md">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="BillCraft AI" className="h-10 w-auto" />
+            <img src="/logo.png" alt="BillCraft AI" className="h-20 w-auto" />
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link href="/#features"     className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
