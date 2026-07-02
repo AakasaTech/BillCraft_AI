@@ -31,18 +31,34 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <img src="/app_icon.png" alt="" aria-hidden="true" className="h-7 w-auto" />
-            <span className="text-base font-bold text-foreground">BillCraft AI</span>
+        <div className="mx-auto max-w-7xl space-y-5">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-2">
+              <img src="/app_icon.png" alt="" aria-hidden="true" className="h-7 w-auto" />
+              <span className="text-base font-bold text-foreground">BillCraft AI</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} BillCraft AI. All rights reserved.
+            </p>
+            <div className="flex gap-6 text-xs text-muted-foreground">
+              <Link href="/faq"     className="hover:text-foreground transition-colors">FAQ</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link href="/terms"   className="hover:text-foreground transition-colors">Terms of Service</Link>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} BillCraft AI. All rights reserved.
-          </p>
-          <div className="flex gap-6 text-xs text-muted-foreground">
-            <Link href="/faq"     className="hover:text-foreground transition-colors">FAQ</Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="/terms"   className="hover:text-foreground transition-colors">Terms of Service</Link>
+          <div className="flex flex-col items-center justify-between gap-2 border-t border-border/50 pt-4 sm:flex-row">
+            <p className="text-xs text-muted-foreground">
+              Built by{' '}
+              <a href="https://aakasa.dev" className="font-medium hover:text-foreground transition-colors">
+                Aakasa Digital
+              </a>
+            </p>
+            <a
+              href="https://supportcraft.aakasa.dev"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Also try SupportCraft AI — AI-powered help desk →
+            </a>
           </div>
         </div>
       </footer>
