@@ -74,11 +74,11 @@ export default async function BillingPage({
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Billing</h1>
+    <div className="p-6 space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold">Billing &amp; Plans</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your subscription and payment details.
+          Manage your subscription and upgrade your plan.
         </p>
       </div>
       <BillingOverview
