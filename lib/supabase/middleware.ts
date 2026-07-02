@@ -53,7 +53,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/api/webhooks')  ||
     pathname.startsWith('/privacy')       ||
     pathname.startsWith('/terms')         ||
-    pathname.startsWith('/faq');
+    pathname.startsWith('/faq')            ||
+    pathname.startsWith('/docs');
 
   // ── Unauthenticated access to protected routes ────────────────────────────
   if (!user && !isPublicRoute) {

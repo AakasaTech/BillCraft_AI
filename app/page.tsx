@@ -477,6 +477,7 @@ export default function LandingPage() {
             © {new Date().getFullYear()} BillCraft AI. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-muted-foreground">
+            <Link href="/docs"    className="hover:text-foreground transition-colors">Docs</Link>
             <Link href="/faq"     className="hover:text-foreground transition-colors">FAQ</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link href="/terms"   className="hover:text-foreground transition-colors">Terms of Service</Link>
