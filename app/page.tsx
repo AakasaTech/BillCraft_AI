@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { PricingSection } from '@/components/shared/PricingSection';
+import { PRICING_PLANS } from '@/lib/plans';
 
 // ─── Feature strip (below hero) ───────────────────────────────────────────────
 
@@ -110,8 +111,44 @@ const BARS = [30, 55, 42, 68, 50, 78, 62, 85, 58, 90, 72, 100];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const APP_URL = 'https://billcraft.aakasa.dev'
+
+function buildSoftwareAppSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'BillCraft AI',
+    description:
+      'AI-powered invoicing and billing platform for freelancers, consultants, and agencies. Create professional invoices instantly, automate payment reminders, track expenses, and get paid faster.',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: APP_URL,
+    image: `${APP_URL}/android-chrome-512x512.png`,
+    offers: PRICING_PLANS.map((plan) => ({
+      '@type': 'Offer',
+      name: plan.name,
+      description: plan.description,
+      price: plan.monthlyPrice.toFixed(2),
+      priceCurrency: 'USD',
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: plan.monthlyPrice.toFixed(2),
+        priceCurrency: 'USD',
+        referenceQuantity: { '@type': 'QuantitativeValue', value: '1', unitCode: 'MON' },
+      },
+      url: `${APP_URL}/register`,
+    })),
+  }
+}
+
 export default function LandingPage() {
+  const softwareAppSchema = buildSoftwareAppSchema()
   return (
+    <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
+    />
     <div className="min-h-screen bg-background text-foreground">
 
       {/* ── Nav ─────────────────────────────────────────────────────────────── */}
@@ -124,6 +161,7 @@ export default function LandingPage() {
             <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
             <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How it works</Link>
             <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+            <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
@@ -439,12 +477,14 @@ export default function LandingPage() {
             © {new Date().getFullYear()} BillCraft AI. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-muted-foreground">
+            <Link href="/faq"     className="hover:text-foreground transition-colors">FAQ</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link href="/terms"   className="hover:text-foreground transition-colors">Terms of Service</Link>
           </div>
         </div>
       </footer>
 
     </div>
+    </>
   );
 }

@@ -14,6 +14,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <Link href="/#features"     className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
             <Link href="/#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How it works</Link>
             <Link href="/#pricing"      className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+            <Link href="/faq"           className="text-sm text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login" className="hidden text-sm text-muted-foreground hover:text-foreground transition-colors sm:block">
@@ -39,6 +40,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             © {new Date().getFullYear()} BillCraft AI. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-muted-foreground">
+            <Link href="/faq"     className="hover:text-foreground transition-colors">FAQ</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link href="/terms"   className="hover:text-foreground transition-colors">Terms of Service</Link>
           </div>
