@@ -66,12 +66,13 @@ export default async function BillingPage({
       .single(),
   ])
 
-  // Read which PayPal plan IDs are configured (server-only env vars)
-  const paypalConfigured = {
-    basic:  { monthly: !!PAYPAL_PLAN_IDS.basic.monthly,  annual: !!PAYPAL_PLAN_IDS.basic.annual  },
-    pro:    { monthly: !!PAYPAL_PLAN_IDS.pro.monthly,    annual: !!PAYPAL_PLAN_IDS.pro.annual    },
-    agency: { monthly: !!PAYPAL_PLAN_IDS.agency.monthly, annual: !!PAYPAL_PLAN_IDS.agency.annual },
+  // Pass plan IDs to the client (not secret — they're public PayPal plan identifiers)
+  const paypalPlanIds = {
+    basic:  { monthly: PAYPAL_PLAN_IDS.basic.monthly  ?? null, annual: PAYPAL_PLAN_IDS.basic.annual  ?? null },
+    pro:    { monthly: PAYPAL_PLAN_IDS.pro.monthly    ?? null, annual: PAYPAL_PLAN_IDS.pro.annual    ?? null },
+    agency: { monthly: PAYPAL_PLAN_IDS.agency.monthly ?? null, annual: PAYPAL_PLAN_IDS.agency.annual ?? null },
   }
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID ?? ''
 
   return (
     <div className="p-6 space-y-8">
@@ -83,12 +84,14 @@ export default async function BillingPage({
       </div>
       <BillingOverview
         subscription={sub as Subscription | null}
+        orgId={orgId}
         isOwner={isOwner}
         showSuccess={params.success === '1'}
         showCancelled={params.cancelled === '1'}
         showPayPalActivated={paypalActivated}
         showPayPalCancelled={params.paypal_cancelled === '1'}
-        paypalConfigured={paypalConfigured}
+        paypalPlanIds={paypalPlanIds}
+        paypalClientId={paypalClientId}
         trialEndsAt={org?.trial_ends_at ?? null}
       />
     </div>
