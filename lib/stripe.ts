@@ -24,7 +24,7 @@ export const PLANS = {
     key:      'basic' as const,
     name:     'Basic',
     monthly:  9,
-    annual:   79,
+    annual:   89,
     get monthlyPriceId() { return process.env.STRIPE_BASIC_MONTHLY_PRICE_ID ?? null },
     get annualPriceId()  { return process.env.STRIPE_BASIC_ANNUAL_PRICE_ID  ?? null },
     features: [
@@ -39,7 +39,7 @@ export const PLANS = {
     key:      'pro' as const,
     name:     'Pro',
     monthly:  19,
-    annual:   190,
+    annual:   189,
     get monthlyPriceId() { return process.env.STRIPE_PRO_MONTHLY_PRICE_ID ?? null },
     get annualPriceId()  { return process.env.STRIPE_PRO_ANNUAL_PRICE_ID  ?? null },
     features: [
@@ -57,7 +57,7 @@ export const PLANS = {
     key:      'agency' as const,
     name:     'Agency',
     monthly:  39,
-    annual:   390,
+    annual:   389,
     get monthlyPriceId() { return process.env.STRIPE_AGENCY_MONTHLY_PRICE_ID ?? null },
     get annualPriceId()  { return process.env.STRIPE_AGENCY_ANNUAL_PRICE_ID  ?? null },
     features: [

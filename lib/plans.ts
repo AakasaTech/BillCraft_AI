@@ -21,8 +21,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     name:          "Basic",
     badge:         null,
     monthlyPrice:  9,
-    yearlyPrice:   79,
-    yearlySavings: 29,
+    yearlyPrice:   89,
+    yearlySavings: 19,
     description:   "For freelancers just getting started.",
     features: [
       "5 clients",
@@ -41,8 +41,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     name:          "Pro",
     badge:         "Most popular",
     monthlyPrice:  19,
-    yearlyPrice:   190,
-    yearlySavings: 38,
+    yearlyPrice:   189,
+    yearlySavings: 39,
     description:   "For active freelancers and solo consultants.",
     features: [
       "Unlimited clients",
@@ -67,8 +67,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     name:          "Agency",
     badge:         "For Teams",
     monthlyPrice:  39,
-    yearlyPrice:   390,
-    yearlySavings: 78,
+    yearlyPrice:   389,
+    yearlySavings: 79,
     description:   "For agencies and teams billing multiple clients.",
     features: [
       "Everything in Pro",
