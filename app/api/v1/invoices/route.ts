@@ -9,6 +9,15 @@ interface LineItem {
   amount:      number;
 }
 
+interface TaskCraftMetadata {
+  source:       'taskcraft';
+  workspace_id: string;
+  project_id?:  string | null;
+  date_from:    string;
+  date_to:      string;
+  entry_ids:    string[];
+}
+
 interface CreateInvoiceBody {
   billcraft_client_id: string;
   title:               string;
@@ -16,8 +25,96 @@ interface CreateInvoiceBody {
   currency?:           string;
   notes?:              string | null;
   line_items:          LineItem[];
+  metadata?:           TaskCraftMetadata;
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function buildNotes({
+  title,
+  notes,
+  metadata,
+}: {
+  title?:    string | null
+  notes?:    string | null
+  metadata?: TaskCraftMetadata
+}): string {
+  const parts: string[] = []
+
+  if (title) parts.push(title)
+
+  if (metadata?.source === 'taskcraft') {
+    const lines = ['--- TaskCraft ---']
+    if (metadata.date_from && metadata.date_to)
+      lines.push(`Period: ${metadata.date_from} → ${metadata.date_to}`)
+    if (metadata.entry_ids?.length)
+      lines.push(`Time entries: ${metadata.entry_ids.length}`)
+    parts.push(lines.join('\n'))
+  }
+
+  if (notes) parts.push(notes)
+
+  return parts.join('\n\n') || 'Created via TaskCraft AI'
+}
+
+// ── GET /api/v1/invoices ──────────────────────────────────────────────────────
+// Query params: client_id, status, from (YYYY-MM-DD), to (YYYY-MM-DD),
+//               limit (default 50, max 200), offset (default 0)
+export async function GET(req: NextRequest) {
+  const auth = await validateApiKey(req.headers.get('Authorization'))
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const clientId = searchParams.get('client_id')
+  const status   = searchParams.get('status')
+  const from     = searchParams.get('from')
+  const to       = searchParams.get('to')
+  const limit    = Math.min(Number(searchParams.get('limit') ?? 50), 200)
+  const offset   = Number(searchParams.get('offset') ?? 0)
+
+  const db = createServiceClient()
+
+  let query = db
+    .from('invoices')
+    .select('id, invoice_number, client_id, status, subtotal, tax_amount, total, currency, issue_date, due_date, amount_paid, amount_due, created_at', { count: 'exact' })
+    .eq('organization_id', auth.orgId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (clientId) query = query.eq('client_id', clientId)
+  if (status)   query = query.eq('status', status)
+  if (from)     query = query.gte('issue_date', from)
+  if (to)       query = query.lte('issue_date', to)
+
+  const { data, error, count } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  return NextResponse.json({
+    data: (data ?? []).map((inv) => ({
+      id:          inv.id,
+      number:      inv.invoice_number,
+      client_id:   inv.client_id,
+      status:      inv.status,
+      subtotal:    Number(inv.subtotal),
+      tax_amount:  Number(inv.tax_amount),
+      total:       Number(inv.total),
+      currency:    inv.currency,
+      issue_date:  inv.issue_date,
+      due_date:    inv.due_date ?? null,
+      amount_paid: Number(inv.amount_paid),
+      amount_due:  Number(inv.amount_due),
+      created_at:  inv.created_at,
+      url:         `${baseUrl}/invoices/${inv.id}`,
+    })),
+    total:  count ?? 0,
+    limit,
+    offset,
+  })
+}
+
+// ── POST /api/v1/invoices ─────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const auth = await validateApiKey(req.headers.get('Authorization'))
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,7 +126,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { billcraft_client_id, title, due_date, currency = 'USD', notes, line_items } = body
+  const { billcraft_client_id, title, due_date, currency = 'USD', notes, line_items, metadata } = body
 
   if (!billcraft_client_id || !Array.isArray(line_items) || line_items.length === 0) {
     return NextResponse.json({ error: 'billcraft_client_id and line_items are required' }, { status: 400 })
@@ -78,7 +175,7 @@ export async function POST(req: NextRequest) {
       tax_amount:      0,
       total:           subtotal,
       amount_paid:     0,
-      notes:           notes || (title ? `${title}\n\nCreated via TaskCraft AI` : 'Created via TaskCraft AI'),
+      notes:           buildNotes({ title, notes, metadata }),
     })
     .select('id, invoice_number, status, total, currency, created_at')
     .single()
