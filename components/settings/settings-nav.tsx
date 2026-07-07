@@ -2,16 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, Building2, Mail, ShieldCheck, User, Users } from 'lucide-react'
+import { Bell, Building2, Key, Mail, ShieldCheck, User, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/settings/organization', label: 'Organization', icon: Building2  },
-  { href: '/settings/profile',      label: 'Profile',      icon: User        },
-  { href: '/settings/team',         label: 'Team',         icon: Users       },
-  { href: '/settings/notifications',    label: 'Notifications',   icon: Bell        },
-  { href: '/settings/email-templates', label: 'Email templates', icon: Mail        },
-  { href: '/settings/audit',           label: 'Audit log',       icon: ShieldCheck },
+  { href: '/settings/organization',    label: 'Organization',     icon: Building2  },
+  { href: '/settings/profile',         label: 'Profile',          icon: User       },
+  { href: '/settings/team',            label: 'Team',             icon: Users      },
+  { href: '/settings/notifications',   label: 'Notifications',    icon: Bell       },
+  { href: '/settings/email-templates', label: 'Email templates',  icon: Mail       },
+  { href: '/settings/api',             label: 'API keys',         icon: Key        },
+  { href: '/settings/audit',           label: 'Audit log',        icon: ShieldCheck },
 ]
 
 export function SettingsNav() {
