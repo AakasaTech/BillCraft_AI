@@ -30,11 +30,17 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+  const pathname = request.nextUrl.pathname;
+
+  // All /api/* routes manage their own auth (Bearer tokens, cron secrets, etc.)
+  // Never redirect them — just pass through so route handlers respond directly.
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
 
   const isAuthRoute   = pathname.startsWith('/login') || pathname.startsWith('/register');
   const isAdminRoute  = pathname.startsWith('/admin');
@@ -46,15 +52,9 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/p/')            ||
     pathname.startsWith('/e/')            ||
     pathname.startsWith('/portal/')       ||
-    pathname.startsWith('/api/auth/')      ||
-    pathname.startsWith('/api/v1')        ||
-    pathname.startsWith('/api/p/')        ||
-    pathname.startsWith('/api/e/')        ||
-    pathname.startsWith('/api/portal')    ||
-    pathname.startsWith('/api/webhooks')  ||
     pathname.startsWith('/privacy')       ||
     pathname.startsWith('/terms')         ||
-    pathname.startsWith('/faq')            ||
+    pathname.startsWith('/faq')           ||
     pathname.startsWith('/docs');
 
   // ── Unauthenticated access to protected routes ────────────────────────────
