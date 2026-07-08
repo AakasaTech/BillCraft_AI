@@ -211,7 +211,7 @@ export function ApiKeysClient({ keys: initialKeys, canManage }: { keys: ApiKeyRo
       <div className="rounded-xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
         <p className="font-semibold text-foreground">How to use</p>
         <p>In TaskCraft AI, go to <strong>Integrations → BillCraft AI</strong> and paste your API key.</p>
-        <p>The base URL should be <code className="rounded bg-muted px-1 py-0.5">{typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.billcraft.ai'}/api</code></p>
+        <p>The base URL should be <code className="rounded bg-muted px-1 py-0.5">https://billcraft.aakasa.dev/api/v1</code></p>
       </div>
     </div>
   )
