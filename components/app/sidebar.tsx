@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Settings, CreditCard,
   BarChart2, RefreshCw, Wallet, LayoutTemplate,
-  Package, ClipboardList, ChevronRight,
+  Package, ClipboardList, ChevronRight, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -38,9 +38,10 @@ const navGroups = [
   {
     label: 'Account',
     items: [
-      { href: '/reports',  label: 'Reports',  icon: BarChart2 },
-      { href: '/settings', label: 'Settings', icon: Settings  },
-      { href: '/billing',  label: 'Billing',  icon: CreditCard },
+      { href: '/reports',  label: 'Reports',  icon: BarChart2    },
+      { href: '/settings', label: 'Settings', icon: Settings     },
+      { href: '/billing',  label: 'Billing',  icon: CreditCard   },
+      { href: '/help',     label: 'Help',     icon: HelpCircle   },
     ],
   },
 ]
