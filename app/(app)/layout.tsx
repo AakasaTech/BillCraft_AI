@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/app/sidebar'
 import { Header } from '@/components/app/header'
 import { TrialBanner } from '@/components/billing/trial-banner'
 import { getInitials } from '@/lib/utils'
+import { SessionTimeout } from '@/components/shared/SessionTimeout'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -60,6 +61,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <SessionTimeout />
       <Sidebar orgName={orgName} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
