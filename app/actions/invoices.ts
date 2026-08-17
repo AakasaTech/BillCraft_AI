@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { invoiceFormSchema, type InvoiceFormData } from '@/lib/validations/invoices'
 import { getPlanStatus, TRIAL_INVOICE_MONTHLY_LIMIT } from '@/lib/subscription'
+import { approvalGateActive } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type { AuditAction } from '@/types/database'
 
@@ -72,6 +73,10 @@ export async function createInvoiceAction(data: InvoiceFormData): Promise<Action
       amount_paid:          0,
       notes:                parsed.data.notes || null,
       payment_instructions: parsed.data.payment_instructions || null,
+      client_subunit_id:      parsed.data.client_subunit_id || null,
+      shipping_terms:         parsed.data.shipping_terms || null,
+      local_transport_amount: parsed.data.local_transport_amount ?? 0,
+      is_simplified:           parsed.data.is_simplified ?? false,
     })
     .select('id')
     .single()
@@ -135,6 +140,10 @@ export async function updateInvoiceAction(id: string, data: InvoiceFormData): Pr
       total,
       notes:                parsed.data.notes || null,
       payment_instructions: parsed.data.payment_instructions || null,
+      client_subunit_id:      parsed.data.client_subunit_id || null,
+      shipping_terms:         parsed.data.shipping_terms || null,
+      local_transport_amount: parsed.data.local_transport_amount ?? 0,
+      is_simplified:           parsed.data.is_simplified ?? false,
     })
     .eq('id', id)
     .eq('organization_id', ctx.orgId)
@@ -176,6 +185,13 @@ export async function updateInvoiceAction(id: string, data: InvoiceFormData): Pr
 export async function updateInvoiceStatusAction(id: string, status: string): Promise<ActionResult> {
   const ctx = await getCtx()
   if (!ctx) return { error: 'Not authenticated' }
+
+  if (status === 'sent' && await approvalGateActive(ctx.orgId, ctx.supabase)) {
+    const { data: inv } = await ctx.supabase.from('invoices').select('approved_at').eq('id', id).single()
+    if (!inv?.approved_at) {
+      return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
+    }
+  }
 
   const updates: Record<string, unknown> = { status }
   if (status === 'paid') {
@@ -225,4 +241,123 @@ export async function deleteInvoiceAction(id: string): Promise<ActionResult> {
 
   revalidatePath('/invoices')
   redirect('/invoices')
+}
+
+// ── Approval workflow (Agency plan) ─────────────────────────────────────────
+
+export async function submitForApprovalAction(id: string): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await approvalGateActive(ctx.orgId, ctx.supabase))) {
+    return { error: 'Approval workflow is not available for your plan.' }
+  }
+
+  // Clears any prior rejection — resubmitting always requires a fresh review.
+  const { error } = await ctx.supabase
+    .from('invoices')
+    .update({
+      status:                    'pending_approval',
+      submitted_for_approval_at: new Date().toISOString(),
+      approved_by:                null,
+      approved_at:                null,
+      rejected_by:                null,
+      rejected_at:                null,
+      rejection_note:             null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'draft')
+
+  if (error) return { error: 'Only draft invoices can be submitted for approval.' }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'invoice', entityId: id,
+    action: 'update', newValues: { status: 'pending_approval' },
+  })
+
+  revalidatePath('/invoices')
+  revalidatePath(`/invoices/${id}`)
+  return {}
+}
+
+export async function approveInvoiceAction(id: string): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  const { data: caller } = await ctx.supabase
+    .from('users').select('is_invoice_approver').eq('id', ctx.userId).single()
+  if (!caller?.is_invoice_approver) return { error: 'Only designated approvers can approve invoices.' }
+
+  const { data: inv } = await ctx.supabase
+    .from('invoices').select('created_by, status').eq('id', id).eq('organization_id', ctx.orgId).single()
+  if (!inv) return { error: 'Invoice not found.' }
+  if (inv.status !== 'pending_approval') return { error: 'This invoice is not awaiting approval.' }
+  // Maker-checker: the person who created the invoice can't also approve it,
+  // even if they're a designated approver themselves.
+  if (inv.created_by === ctx.userId) return { error: 'You cannot approve an invoice you created yourself.' }
+
+  const { error } = await ctx.supabase
+    .from('invoices')
+    .update({
+      status:      'draft',
+      approved_by: ctx.userId,
+      approved_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'pending_approval')
+
+  if (error) return { error: error.message }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'invoice', entityId: id,
+    action: 'update', newValues: { status: 'approved' },
+  })
+
+  revalidatePath('/invoices')
+  revalidatePath(`/invoices/${id}`)
+  return {}
+}
+
+export async function rejectInvoiceAction(id: string, note: string): Promise<ActionResult> {
+  if (!note.trim()) return { error: 'A rejection note is required.' }
+
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  const { data: caller } = await ctx.supabase
+    .from('users').select('is_invoice_approver').eq('id', ctx.userId).single()
+  if (!caller?.is_invoice_approver) return { error: 'Only designated approvers can reject invoices.' }
+
+  const { data: inv } = await ctx.supabase
+    .from('invoices').select('created_by, status').eq('id', id).eq('organization_id', ctx.orgId).single()
+  if (!inv) return { error: 'Invoice not found.' }
+  if (inv.status !== 'pending_approval') return { error: 'This invoice is not awaiting approval.' }
+  if (inv.created_by === ctx.userId) return { error: 'You cannot reject an invoice you created yourself.' }
+
+  const { error } = await ctx.supabase
+    .from('invoices')
+    .update({
+      status:         'draft',
+      rejected_by:    ctx.userId,
+      rejected_at:    new Date().toISOString(),
+      rejection_note: note.trim(),
+      approved_by:    null,
+      approved_at:    null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'pending_approval')
+
+  if (error) return { error: error.message }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'invoice', entityId: id,
+    action: 'update', newValues: { status: 'rejected', rejection_note: note.trim() },
+  })
+
+  revalidatePath('/invoices')
+  revalidatePath(`/invoices/${id}`)
+  return {}
 }

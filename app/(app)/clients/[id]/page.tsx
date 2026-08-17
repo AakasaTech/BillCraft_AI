@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ClientDetailView } from '@/components/clients/client-detail-view'
-import type { Client } from '@/types/database'
+import type { Client, ClientSubunit } from '@/types/database'
 
 export const metadata = { title: 'Client — BillCraft AI' }
 
@@ -22,7 +22,7 @@ export default async function ClientDetailPage({
 
   const orgId = userRecord.organization_id
 
-  const [{ data: client }, { data: invoicesRaw }] = await Promise.all([
+  const [{ data: client }, { data: invoicesRaw }, { data: org }, { data: subunitsRaw }] = await Promise.all([
     supabase
       .from('clients')
       .select('*')
@@ -37,9 +37,24 @@ export default async function ClientDetailPage({
       .eq('organization_id', orgId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('organizations')
+      .select('category')
+      .eq('id', orgId)
+      .single(),
+    supabase
+      .from('client_subunits')
+      .select('*')
+      .eq('client_id', id)
+      .eq('organization_id', orgId)
+      .is('deleted_at', null)
+      .order('name'),
   ])
 
   if (!client) notFound()
+
+  const isTrading = org?.category === 'trading'
+  const subunits  = (subunitsRaw ?? []) as ClientSubunit[]
 
   const invoices = invoicesRaw ?? []
 
@@ -57,6 +72,8 @@ export default async function ClientDetailPage({
       client={client as Client}
       invoices={invoices}
       stats={{ totalInvoiced, totalPaid, outstanding, currency }}
+      isTrading={isTrading}
+      subunits={subunits}
     />
   )
 }

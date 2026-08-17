@@ -20,7 +20,8 @@ import type { InvoiceStatus, EstimateStatus } from '@/types/database'
 export const metadata: Metadata = { title: 'Dashboard — BillCraft AI' }
 
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info'> = {
-  draft:     'secondary',
+  draft:            'secondary',
+  pending_approval: 'warning',
   sent:      'default',
   viewed:    'info',
   partial:   'warning',

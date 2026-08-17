@@ -9,6 +9,7 @@ export const paymentInstructionSchema = z.object({
 
 export const orgSettingsSchema = z.object({
   name:                     z.string().min(1, 'Name is required').max(255),
+  category:                 z.enum(['service', 'trading']).default('service'),
   default_currency:         z.string().length(3, 'Select a currency'),
   timezone:                 z.string().min(1, 'Select a timezone'),
   country_code:             opt(2),

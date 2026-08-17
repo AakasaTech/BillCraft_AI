@@ -22,6 +22,10 @@ export type PlanStatus = {
   canUseExpenses:           boolean
   canUseRecurring:          boolean
   canUseTemplates:          boolean
+  // Trading-category orgs only — independent of plan tier/trial/freepass
+  canUseTradingFields:      boolean
+  // Agency plan only — not part of the trial's Pro-equivalent bundle
+  canUseApprovalWorkflow:   boolean
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,6 +71,10 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
   const cc = clientCount  ?? 0
   const ic = invoiceCount ?? 0
 
+  // Trading fields are gated purely on org category, independent of plan/trial/
+  // freepass status — computed once here so all four branches below agree.
+  const canUseTradingFields = org?.category === 'trading'
+
   // ── Admin-granted free pass (highest priority) ────────────────────────────
   if (org?.freepass_until && new Date(org.freepass_until) > now && org.freepass_plan) {
     const plan  = (org.freepass_plan as string).toLowerCase()
@@ -86,6 +94,8 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
       canUseExpenses:           isPro,
       canUseRecurring:          isPro,
       canUseTemplates:          isPro,
+      canUseTradingFields,
+      canUseApprovalWorkflow:   plan === 'agency',
     }
   }
 
@@ -111,6 +121,8 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
         canUseExpenses:           false,
         canUseRecurring:          false,
         canUseTemplates:          false,
+        canUseTradingFields,
+        canUseApprovalWorkflow:   false,
       }
     }
 
@@ -130,6 +142,8 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
       canUseExpenses:           isPro,
       canUseRecurring:          isPro,
       canUseTemplates:          isPro,
+      canUseTradingFields,
+      canUseApprovalWorkflow:   plan === 'agency',
     }
   }
 
@@ -152,6 +166,8 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
       canUseExpenses:           true,
       canUseRecurring:          true,
       canUseTemplates:          true,
+      canUseTradingFields,
+      canUseApprovalWorkflow:   false,
     }
   }
 
@@ -171,5 +187,7 @@ export async function getPlanStatus(orgId: string, supabase: any): Promise<PlanS
     canUseExpenses:           false,
     canUseRecurring:          false,
     canUseTemplates:          false,
+    canUseTradingFields,
+    canUseApprovalWorkflow:   false,
   }
 }

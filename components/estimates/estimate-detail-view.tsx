@@ -8,7 +8,7 @@ import { Pencil, Send, FileCheck2, FileX2, Clock, Trash2, ArrowRight, ExternalLi
 import { EstimateStatusBadge } from '@/components/estimates/estimate-status-badge'
 import {
   sendEstimateEmailAction, markEstimateStatusAction,
-  deleteEstimateAction, convertToInvoiceAction,
+  deleteEstimateAction, convertEstimateAction,
 } from '@/app/actions/estimates'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -51,9 +51,15 @@ export function EstimateDetailView({ estimate, items, client, org }: EstimateDet
   })
 
   const handleConvert = () => startTransition(async () => {
-    const r = await convertToInvoiceAction(estimate.id)
-    if (r?.error) toast.error(r.error)
-    else { toast.success('Invoice created!'); router.push(`/invoices/${r.invoiceId}/edit`) }
+    const r = await convertEstimateAction(estimate.id)
+    if (r?.error) { toast.error(r.error); return }
+    if (r.proformaId) {
+      toast.success('Proforma created!')
+      router.push(`/proformas/${r.proformaId}`)
+    } else if (r.invoiceId) {
+      toast.success('Invoice created!')
+      router.push(`/invoices/${r.invoiceId}/edit`)
+    }
   })
 
   return (
@@ -94,9 +100,10 @@ export function EstimateDetailView({ estimate, items, client, org }: EstimateDet
             </Button>
           )}
 
-          {status === 'accepted' && !estimate.converted_invoice_id && (
+          {status === 'accepted' && !estimate.converted_invoice_id && !estimate.converted_proforma_id && (
             <Button size="sm" disabled={isPending} onClick={handleConvert}>
-              <ArrowRight className="mr-2 h-4 w-4" /> Convert to invoice
+              <ArrowRight className="mr-2 h-4 w-4" />
+              {org.category === 'trading' ? 'Convert to proforma' : 'Convert to invoice'}
             </Button>
           )}
 
@@ -104,6 +111,14 @@ export function EstimateDetailView({ estimate, items, client, org }: EstimateDet
             <Button variant="outline" size="sm" asChild>
               <Link href={`/invoices/${estimate.converted_invoice_id}`}>
                 <FileCheck2 className="mr-2 h-4 w-4" /> View invoice
+              </Link>
+            </Button>
+          )}
+
+          {estimate.converted_proforma_id && (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/proformas/${estimate.converted_proforma_id}`}>
+                <FileCheck2 className="mr-2 h-4 w-4" /> View proforma
               </Link>
             </Button>
           )}

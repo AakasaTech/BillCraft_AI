@@ -4,6 +4,7 @@ export type UserRole = 'owner' | 'admin' | 'member' | 'viewer';
 export type AuthProvider = 'email' | 'google' | 'microsoft';
 export type InvoiceStatus =
   | 'draft'
+  | 'pending_approval'
   | 'sent'
   | 'viewed'
   | 'partial'
@@ -18,6 +19,14 @@ export type EstimateStatus =
   | 'accepted'
   | 'declined'
   | 'expired';
+export type ProformaStatus =
+  | 'draft'
+  | 'sent'
+  | 'viewed'
+  | 'accepted'
+  | 'converted'
+  | 'expired';
+export type OrgCategory = 'service' | 'trading';
 export type TaxType = 'vat' | 'gst' | 'sales_tax' | 'none';
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type PaymentMethod =
@@ -83,6 +92,7 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
+  category: OrgCategory;
   default_currency: string;
   timezone: string;
   locale: string;
@@ -98,6 +108,7 @@ export interface Organization {
   invoice_prefix: string;
   invoice_number_format: string;
   next_invoice_number: number;
+  next_proforma_number: number;
   payment_instructions: OrgPaymentInstruction[];
   trial_ends_at: string | null;
   freepass_plan: string | null;
@@ -122,6 +133,7 @@ export interface User {
   email_prefix: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  is_invoice_approver: boolean;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
@@ -185,6 +197,20 @@ export interface Invoice {
   last_reminder_sent_at: string | null;
   late_fee_applied_at: string | null;
   share_token: string | null;
+  // Trading-category fields
+  shipping_terms: string | null;
+  po_reference: string | null;
+  local_transport_amount: number;
+  is_simplified: boolean;
+  source_proforma_id: string | null;
+  client_subunit_id: string | null;
+  // Approval workflow (Agency plan)
+  submitted_for_approval_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_note: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -203,6 +229,9 @@ export interface InvoiceItem {
   subtotal: number;
   total: number;
   sort_order: number;
+  // Trading-category fields
+  hs_code: string | null;
+  country_of_origin: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -393,6 +422,7 @@ export interface Estimate {
   response_note: string | null;
   share_token: string | null;
   converted_invoice_id: string | null;
+  converted_proforma_id: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -408,6 +438,69 @@ export interface EstimateItem {
   subtotal: number;
   total: number;
   sort_order: number;
+}
+
+export interface Proforma {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  created_by: string | null;
+  proforma_number: string;
+  status: ProformaStatus;
+  issue_date: string;
+  expiry_date: string | null;
+  currency: string;
+  exchange_rate: number;
+  subtotal: number;
+  discount_amount: number;
+  tax_amount: number;
+  total: number;
+  tax_type: TaxType;
+  tax_rate: number;
+  shipping_terms: string | null;
+  local_transport_amount: number;
+  client_subunit_id: string | null;
+  notes: string | null;
+  terms: string | null;
+  sent_at: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  response_note: string | null;
+  share_token: string | null;
+  converted_invoice_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface ProformaItem {
+  id: string;
+  proforma_id: string;
+  organization_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  hs_code: string | null;
+  country_of_origin: string | null;
+  subtotal: number;
+  total: number;
+  sort_order: number;
+}
+
+export interface ClientSubunit {
+  id: string;
+  client_id: string;
+  organization_id: string;
+  name: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country_code: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface Product {

@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getPlanStatus } from '@/lib/subscription'
+import { approvalGateActive } from '@/lib/invoice-approval'
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { InvoiceActions } from '@/components/invoices/invoice-actions'
 import { InvoiceTimeline } from '@/components/invoices/invoice-timeline'
@@ -28,8 +29,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const orgId = userRecord.organization_id
 
-  const [plan, [{ data: invoice }, { data: itemsRaw }, { data: emailsRaw }, { data: paymentsRaw }]] = await Promise.all([
+  const [plan, approvalRequired, [{ data: invoice }, { data: itemsRaw }, { data: emailsRaw }, { data: paymentsRaw }]] = await Promise.all([
     getPlanStatus(orgId, supabase),
+    approvalGateActive(orgId, supabase),
     Promise.all([
     supabase
       .from('invoices')
@@ -88,6 +90,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           currency={inv.currency}
           shareToken={inv.share_token}
           canUseAI={plan.canUseAI}
+          approvalRequired={approvalRequired}
+          canApprove={userRecord.is_invoice_approver === true}
+          isCreator={inv.created_by === user.id}
+          rejectionNote={inv.rejection_note}
         />
       </div>
 

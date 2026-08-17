@@ -8,6 +8,7 @@ import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
 import { buildEstimateEmail } from '@/lib/email/estimate-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { estimateFormSchema, type EstimateFormData } from '@/lib/validations/estimates'
+import { convertEstimateToProformaAction } from '@/app/actions/proformas'
 import type { Estimate, EstimateItem, Client, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
@@ -404,4 +405,26 @@ export async function convertToInvoiceAction(id: string): Promise<{ error?: stri
   revalidatePath('/invoices')
 
   return { invoiceId: invoice.id }
+}
+
+// Single entry point for "convert this accepted estimate" — branches on org
+// category so callers (e.g. the estimate detail view's Convert button) don't
+// need to know which downstream document type an org produces. Trading-category
+// orgs go through convertEstimateToProformaAction; everyone else keeps using
+// convertToInvoiceAction unchanged.
+export async function convertEstimateAction(
+  id: string,
+): Promise<{ error?: string; invoiceId?: string; proformaId?: string }> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  const { data: org } = await ctx.supabase
+    .from('organizations')
+    .select('category')
+    .eq('id', ctx.orgId)
+    .single()
+
+  return org?.category === 'trading'
+    ? convertEstimateToProformaAction(id)
+    : convertToInvoiceAction(id)
 }

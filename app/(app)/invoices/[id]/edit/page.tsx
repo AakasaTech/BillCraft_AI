@@ -21,7 +21,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
 
   const orgId = userRecord.organization_id
 
-  const [{ data: invoice }, { data: itemsRaw }, { data: clientsRaw }, { data: orgData }, { data: productsRaw }] = await Promise.all([
+  const [{ data: invoice }, { data: itemsRaw }, { data: clientsRaw }, { data: orgData }, { data: productsRaw }, { data: subunitsRaw }] = await Promise.all([
     supabase
       .from('invoices')
       .select('*')
@@ -53,6 +53,12 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
       .eq('is_active', true)
       .is('deleted_at', null)
       .order('name'),
+    supabase
+      .from('client_subunits')
+      .select('id, client_id, name')
+      .eq('organization_id', orgId)
+      .is('deleted_at', null)
+      .order('name'),
   ])
 
   if (!invoice || invoice.status !== 'draft') notFound()
@@ -71,6 +77,10 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
     discount_amount:      inv.discount_amount,
     notes:                inv.notes ?? '',
     payment_instructions: inv.payment_instructions ?? '',
+    client_subunit_id:      inv.client_subunit_id ?? '',
+    shipping_terms:         inv.shipping_terms ?? '',
+    local_transport_amount: inv.local_transport_amount ?? 0,
+    is_simplified:          inv.is_simplified ?? false,
     items: items.map((item, i) => ({
       description: item.description,
       quantity:    item.quantity,
@@ -79,11 +89,13 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
     })),
   }
 
+  const isTrading = orgData?.category === 'trading'
   const clients  = (clientsRaw  ?? []).map(c => ({ id: c.id, name: c.name }))
   const products = (productsRaw ?? []).map(p => ({
     id: p.id, name: p.name, description: p.description,
     unit_price: p.unit_price, currency: p.currency,
   }))
+  const subunits = (subunitsRaw ?? []) as { id: string; client_id: string; name: string }[]
 
   return (
     <div className="mx-auto max-w-4xl p-6">
@@ -99,6 +111,8 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
         defaultValues={defaultValues}
         savedPaymentInstructions={(orgData?.payment_instructions ?? []) as { name: string; content: string }[]}
         products={products}
+        isTrading={isTrading}
+        subunits={subunits}
       />
     </div>
   )

@@ -46,8 +46,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .maybeSingle(),
   ])
 
-  const userName = userRecord.name ?? user.email?.split('@')[0] ?? 'User'
-  const orgName  = org?.name ?? 'My workspace'
+  const userName  = userRecord.name ?? user.email?.split('@')[0] ?? 'User'
+  const orgName   = org?.name ?? 'My workspace'
+  const isTrading = org?.category === 'trading'
 
   // Determine trial banner state
   const hasActiveSub = !!sub
@@ -62,13 +63,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <SessionTimeout />
-      <Sidebar orgName={orgName} />
+      <Sidebar orgName={orgName} isTrading={isTrading} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           orgName={orgName}
           userName={userName}
           userEmail={user.email ?? ''}
           userInitials={getInitials(userName)}
+          isTrading={isTrading}
         />
         {(inTrial || trialExpired) && (
           <TrialBanner

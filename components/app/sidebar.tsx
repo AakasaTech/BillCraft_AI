@@ -5,28 +5,30 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Settings, CreditCard,
   BarChart2, RefreshCw, Wallet, LayoutTemplate,
-  Package, ClipboardList, ChevronRight, HelpCircle,
+  Package, ClipboardList, ChevronRight, HelpCircle, Ship,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ── Nav structure ─────────────────────────────────────────────────────────────
 
-const navGroups = [
-  {
-    label: null,
-    items: [
-      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: 'Billing',
-    items: [
-      { href: '/invoices',  label: 'Invoices',  icon: FileText      },
-      { href: '/estimates', label: 'Quotes',    icon: ClipboardList  },
-      { href: '/clients',   label: 'Customers', icon: Users          },
-      { href: '/expenses',  label: 'Expenses',  icon: Wallet         },
-    ],
-  },
+function buildNavGroups(isTrading: boolean) {
+  return [
+    {
+      label: null,
+      items: [
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      ],
+    },
+    {
+      label: 'Billing',
+      items: [
+        { href: '/invoices',  label: 'Invoices',  icon: FileText      },
+        ...(isTrading ? [{ href: '/proformas', label: 'Proformas', icon: Ship }] : []),
+        { href: '/estimates', label: 'Quotes',    icon: ClipboardList  },
+        { href: '/clients',   label: 'Customers', icon: Users          },
+        { href: '/expenses',  label: 'Expenses',  icon: Wallet         },
+      ],
+    },
   {
     label: 'Manage',
     items: [
@@ -44,7 +46,8 @@ const navGroups = [
       { href: '/help',     label: 'Help',     icon: HelpCircle   },
     ],
   },
-]
+  ]
+}
 
 // ── Nav link ──────────────────────────────────────────────────────────────────
 
@@ -75,7 +78,8 @@ function NavLink({
 
 // ── Nav content (shared by desktop sidebar + mobile sheet) ────────────────────
 
-function NavContent({ pathname }: { pathname: string }) {
+function NavContent({ pathname, isTrading }: { pathname: string; isTrading: boolean }) {
+  const navGroups = buildNavGroups(isTrading)
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
       {navGroups.map((group, gi) => (
@@ -127,13 +131,13 @@ function SidebarFooter() {
 
 // ── Desktop sidebar ───────────────────────────────────────────────────────────
 
-export function Sidebar({ orgName: _ }: { orgName: string }) {
+export function Sidebar({ orgName: _, isTrading = false }: { orgName: string; isTrading?: boolean }) {
   const pathname = usePathname()
 
   return (
     <aside className="bc-sidebar hidden md:flex w-64 shrink-0 flex-col">
       <BrandHeader />
-      <NavContent pathname={pathname} />
+      <NavContent pathname={pathname} isTrading={isTrading} />
       <SidebarFooter />
     </aside>
   )
@@ -141,13 +145,13 @@ export function Sidebar({ orgName: _ }: { orgName: string }) {
 
 // ── Mobile sidebar (used inside Sheet) ───────────────────────────────────────
 
-export function MobileSidebarContent({ orgName: _ }: { orgName: string }) {
+export function MobileSidebarContent({ orgName: _, isTrading = false }: { orgName: string; isTrading?: boolean }) {
   const pathname = usePathname()
 
   return (
     <div className="bc-sidebar flex h-full flex-col">
       <BrandHeader />
-      <NavContent pathname={pathname} />
+      <NavContent pathname={pathname} isTrading={isTrading} />
     </div>
   )
 }

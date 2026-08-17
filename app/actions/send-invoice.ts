@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendEmail, isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { buildInvoiceEmail } from '@/lib/email/invoice-template'
 import { substituteVars } from '@/lib/email/template-renderer'
+import { approvalGateActive } from '@/lib/invoice-approval'
 import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
@@ -57,6 +58,10 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
   const client = inv.clients
 
   if (!client?.email) return { error: 'Client has no email address. Add one in the client settings.' }
+
+  if (inv.status === 'draft' && await approvalGateActive(orgId, supabase) && !inv.approved_at) {
+    return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
+  }
 
   // Generate PDF buffer
   const { renderToBuffer } = await import('@react-pdf/renderer')

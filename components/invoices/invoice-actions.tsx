@@ -4,41 +4,81 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Pencil, Trash2, Send, XCircle,
-  Download, Mail, Bell, Link2, Check,
+  Download, Mail, Bell, Link2, Check, ClipboardCheck, ThumbsUp, ThumbsDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { updateInvoiceStatusAction, deleteInvoiceAction } from '@/app/actions/invoices'
+import {
+  updateInvoiceStatusAction, deleteInvoiceAction,
+  submitForApprovalAction, approveInvoiceAction, rejectInvoiceAction,
+} from '@/app/actions/invoices'
 import { sendInvoiceEmailAction } from '@/app/actions/send-invoice'
 import { AiReminderDialog } from './ai-reminder-dialog'
 import { RecordPaymentDialog } from './record-payment-dialog'
 
 interface InvoiceActionsProps {
-  invoiceId:   string
-  status:      string
-  clientEmail: string | null
-  amountDue:   number
-  currency:    string
-  shareToken?: string | null
-  canUseAI?:   boolean
+  invoiceId:        string
+  status:           string
+  clientEmail:      string | null
+  amountDue:        number
+  currency:         string
+  shareToken?:      string | null
+  canUseAI?:        boolean
+  approvalRequired?: boolean
+  canApprove?:       boolean
+  isCreator?:        boolean
+  rejectionNote?:    string | null
 }
 
-export function InvoiceActions({ invoiceId, status, clientEmail, amountDue, currency, shareToken, canUseAI = false }: InvoiceActionsProps) {
+export function InvoiceActions({
+  invoiceId, status, clientEmail, amountDue, currency, shareToken, canUseAI = false,
+  approvalRequired = false, canApprove = false, isCreator = false, rejectionNote,
+}: InvoiceActionsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isCopied,       setIsCopied]       = useState(false)
   const [reminderOpen,   setReminderOpen]   = useState(false)
+  const [rejecting,      setRejecting]      = useState(false)
+  const [rejectNote,     setRejectNote]     = useState('')
 
   const handleStatus = (newStatus: string) => {
     startTransition(async () => {
       const result = await updateInvoiceStatusAction(invoiceId, newStatus)
       if (result?.error) toast.error(result.error)
       else toast.success(`Invoice marked as ${newStatus}.`)
+    })
+  }
+
+  const handleSubmitForApproval = () => {
+    startTransition(async () => {
+      const result = await submitForApprovalAction(invoiceId)
+      if (result?.error) toast.error(result.error)
+      else { toast.success('Submitted for approval.'); router.refresh() }
+    })
+  }
+
+  const handleApprove = () => {
+    startTransition(async () => {
+      const result = await approveInvoiceAction(invoiceId)
+      if (result?.error) toast.error(result.error)
+      else { toast.success('Invoice approved.'); router.refresh() }
+    })
+  }
+
+  const handleReject = () => {
+    startTransition(async () => {
+      const result = await rejectInvoiceAction(invoiceId, rejectNote)
+      if (result?.error) { toast.error(result.error); return }
+      toast.success('Invoice rejected.')
+      setRejecting(false)
+      setRejectNote('')
+      router.refresh()
     })
   }
 
@@ -67,16 +107,54 @@ export function InvoiceActions({ invoiceId, status, clientEmail, amountDue, curr
     })
   }
 
-  const canShare  = !!shareToken && !['draft', 'cancelled', 'void'].includes(status)
-  const canEdit   = status === 'draft'
-  const canSend     = status === 'draft' || status === 'viewed'
-  const canEmail    = ['draft', 'sent', 'viewed', 'overdue', 'partial'].includes(status)
+  const isDraft         = status === 'draft'
+  const draftSendable   = isDraft && !approvalRequired
+  const canSubmit       = isDraft && approvalRequired
+  const canActOnApproval = status === 'pending_approval' && canApprove && !isCreator
+  const awaitingOthersApproval = status === 'pending_approval' && !canActOnApproval
+
+  const canShare  = !!shareToken && !['draft', 'pending_approval', 'cancelled', 'void'].includes(status)
+  const canEdit   = isDraft
+  const canSend     = draftSendable || status === 'viewed'
+  const canEmail    = draftSendable || ['sent', 'viewed', 'overdue', 'partial'].includes(status)
   const canRemind   = ['sent', 'viewed', 'partial', 'overdue'].includes(status)
   const canPay      = ['draft', 'sent', 'viewed', 'partial', 'overdue'].includes(status)
   const canVoid     = ['sent', 'viewed', 'partial', 'overdue'].includes(status)
-  const canDelete   = status === 'draft' || status === 'cancelled'
+  const canDelete   = isDraft || status === 'cancelled'
 
   return (
+    <div className="flex flex-col items-end gap-2">
+      {isDraft && rejectionNote && (
+        <div className="w-full rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <span className="font-medium">Rejected: </span>{rejectionNote}
+        </div>
+      )}
+
+      {rejecting && (
+        <div className="w-full space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <Textarea
+            value={rejectNote}
+            onChange={e => setRejectNote(e.target.value)}
+            placeholder="Explain what needs to change before this can be approved…"
+            rows={2}
+            className="resize-none bg-background"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setRejecting(false); setRejectNote('') }} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive" size="sm"
+              onClick={handleReject}
+              disabled={isPending || !rejectNote.trim()}
+            >
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm rejection
+            </Button>
+          </div>
+        </div>
+      )}
+
     <div className="flex flex-wrap items-center gap-2">
       {/* Download PDF — always available */}
       <Button variant="outline" size="sm" asChild>
@@ -162,6 +240,35 @@ export function InvoiceActions({ invoiceId, status, clientEmail, amountDue, curr
         </Button>
       )}
 
+      {canSubmit && (
+        <Button size="sm" onClick={handleSubmitForApproval} disabled={isPending}>
+          {isPending
+            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            : <ClipboardCheck className="mr-2 h-4 w-4" />}
+          Submit for approval
+        </Button>
+      )}
+
+      {awaitingOthersApproval && (
+        <span className="inline-flex items-center rounded-md border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+          {isCreator ? 'Awaiting approval from another approver' : 'Awaiting approval'}
+        </span>
+      )}
+
+      {canActOnApproval && !rejecting && (
+        <>
+          <Button size="sm" onClick={handleApprove} disabled={isPending}>
+            {isPending
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <ThumbsUp className="mr-2 h-4 w-4" />}
+            Approve
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRejecting(true)} disabled={isPending}>
+            <ThumbsDown className="mr-2 h-4 w-4" /> Reject
+          </Button>
+        </>
+      )}
+
       {canSend && (
         <Button variant="outline" size="sm" onClick={() => handleStatus('sent')} disabled={isPending}>
           {isPending
@@ -212,6 +319,7 @@ export function InvoiceActions({ invoiceId, status, clientEmail, amountDue, curr
           </AlertDialogContent>
         </AlertDialog>
       )}
+    </div>
     </div>
   )
 }

@@ -17,7 +17,8 @@ export const metadata: Metadata = { title: 'Reports — BillCraft AI' }
 const PAGE_SIZE = 25
 
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info'> = {
-  draft:     'secondary',
+  draft:            'secondary',
+  pending_approval: 'warning',
   sent:      'default',
   viewed:    'info',
   partial:   'warning',

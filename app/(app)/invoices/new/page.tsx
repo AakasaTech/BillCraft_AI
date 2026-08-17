@@ -26,7 +26,7 @@ export default async function NewInvoicePage({
 
   const orgId = userRecord.organization_id
 
-  const [{ data: clientsRaw }, { data: orgData }, { data: nextNum }, { data: productsRaw }] = await Promise.all([
+  const [{ data: clientsRaw }, { data: orgData }, { data: nextNum }, { data: productsRaw }, { data: subunitsRaw }] = await Promise.all([
     supabase
       .from('clients')
       .select('*')
@@ -47,13 +47,21 @@ export default async function NewInvoicePage({
       .eq('is_active', true)
       .is('deleted_at', null)
       .order('name'),
+    supabase
+      .from('client_subunits')
+      .select('id, client_id, name')
+      .eq('organization_id', orgId)
+      .is('deleted_at', null)
+      .order('name'),
   ])
 
+  const isTrading = orgData?.category === 'trading'
   const clients  = (clientsRaw  ?? []).map(c => ({ id: c.id, name: c.name }))
   const products = (productsRaw ?? []).map(p => ({
     id: p.id, name: p.name, description: p.description,
     unit_price: p.unit_price, currency: p.currency,
   }))
+  const subunits = (subunitsRaw ?? []) as { id: string; client_id: string; name: string }[]
 
   // Build defaultValues from template if provided
   let templateDefaults: Partial<InvoiceFormData> | undefined
@@ -88,6 +96,10 @@ export default async function NewInvoicePage({
         discount_amount:      tmpl.discount_amount,
         notes:                tmpl.notes ?? '',
         payment_instructions: tmpl.payment_instructions ?? '',
+        client_subunit_id:      '',
+        shipping_terms:         '',
+        local_transport_amount: 0,
+        is_simplified:          false,
         items: items.length > 0
           ? items.map((i, idx) => ({
               description: i.description,
@@ -117,6 +129,8 @@ export default async function NewInvoicePage({
         savedPaymentInstructions={(orgData?.payment_instructions ?? []) as { name: string; content: string }[]}
         defaultValues={templateDefaults}
         products={products}
+        isTrading={isTrading}
+        subunits={subunits}
       />
     </div>
   )

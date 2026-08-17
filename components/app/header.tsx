@@ -14,9 +14,10 @@ interface HeaderProps {
   userName: string
   userEmail: string
   userInitials: string
+  isTrading?: boolean
 }
 
-export function Header({ orgName, userName, userEmail, userInitials }: HeaderProps) {
+export function Header({ orgName, userName, userEmail, userInitials, isTrading = false }: HeaderProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const pathname = usePathname()
@@ -47,7 +48,7 @@ export function Header({ orgName, userName, userEmail, userInitials }: HeaderPro
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-64 p-0" showClose={false}>
-          <MobileSidebarContent orgName={orgName} />
+          <MobileSidebarContent orgName={orgName} isTrading={isTrading} />
         </SheetContent>
       </Sheet>
 

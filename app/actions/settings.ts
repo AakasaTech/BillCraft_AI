@@ -30,6 +30,7 @@ export async function updateOrgSettingsAction(data: OrgSettingsData): Promise<Ac
     .from('organizations')
     .update({
       name:                    parsed.data.name,
+      category:                parsed.data.category,
       default_currency:        parsed.data.default_currency,
       timezone:                parsed.data.timezone,
       country_code:            parsed.data.country_code || null,

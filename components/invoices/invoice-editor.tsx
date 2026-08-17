@@ -12,12 +12,14 @@ import { toast } from 'sonner'
 import { invoiceFormSchema, type InvoiceFormData } from '@/lib/validations/invoices'
 import { createInvoiceAction, updateInvoiceAction } from '@/app/actions/invoices'
 import { CURRENCIES } from '@/lib/constants'
+import { SHIPPING_TERMS } from '@/lib/constants/shipping-terms'
 import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -26,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 interface ClientOption { id: string; name: string }
 interface PaymentInstructionTemplate { name: string; content: string }
 interface ProductOption { id: string; name: string; description: string | null; unit_price: number; currency: string }
+interface SubunitOption { id: string; client_id: string; name: string }
 
 interface InvoiceEditorProps {
   clients:                    ClientOption[]
@@ -35,6 +38,8 @@ interface InvoiceEditorProps {
   defaultValues?:             Partial<InvoiceFormData>
   savedPaymentInstructions?:  PaymentInstructionTemplate[]
   products?:                  ProductOption[]
+  isTrading?:                 boolean
+  subunits?:                  SubunitOption[]
 }
 
 const today   = () => new Date().toISOString().slice(0, 10)
@@ -48,6 +53,8 @@ export function InvoiceEditor({
   defaultValues,
   savedPaymentInstructions = [],
   products = [],
+  isTrading = false,
+  subunits = [],
 }: InvoiceEditorProps) {
   const router   = useRouter()
   const isEdit   = !!invoiceId
@@ -76,6 +83,10 @@ export function InvoiceEditor({
       notes:                '',
       payment_instructions: '',
       items: [{ description: '', quantity: 1, unit_price: 0, sort_order: 0 }],
+      client_subunit_id:      '',
+      shipping_terms:         '',
+      local_transport_amount: 0,
+      is_simplified:          false,
     },
   })
 
@@ -85,6 +96,9 @@ export function InvoiceEditor({
   const watchedDiscount = useWatch({ control: form.control, name: 'discount_amount' })
   const watchedTaxRate  = useWatch({ control: form.control, name: 'tax_rate' })
   const watchedCurrency = useWatch({ control: form.control, name: 'currency' })
+  const watchedClientId = useWatch({ control: form.control, name: 'client_id' })
+
+  const clientSubunits = subunits.filter(s => s.client_id === watchedClientId)
 
   const safe = (n: number) => Number.isFinite(n) ? n : 0
   const subtotal  = (watchedItems ?? []).reduce((s, i) => s + safe(i.quantity * i.unit_price), 0)
@@ -272,6 +286,59 @@ export function InvoiceEditor({
             />
           </div>
         </div>
+
+        {/* Trading-category fields */}
+        {isTrading && (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {clientSubunits.length > 0 && (
+              <div className="space-y-1.5">
+                <Label>Ship to / sub-unit</Label>
+                <Controller
+                  control={form.control}
+                  name="client_subunit_id"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Client default" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientSubunits.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Shipping terms</Label>
+              <Controller
+                control={form.control}
+                name="shipping_terms"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SHIPPING_TERMS.map(t => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="local_transport_amount">Local transport</Label>
+              <Input
+                id="local_transport_amount" type="number" min="0" step="0.01" placeholder="0.00"
+                {...form.register('local_transport_amount', { valueAsNumber: true })}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Line items ───────────────────────────────────────────────────────── */}
@@ -424,6 +491,24 @@ export function InvoiceEditor({
             <span>{formatCurrency(total, cur)}</span>
           </div>
         </div>
+
+        {isTrading && (
+          <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+            <div>
+              <p className="text-sm font-medium">Simplified invoice (tax included, not itemized)</p>
+              <p className="text-xs text-muted-foreground">
+                Hides the tax line on the PDF and shows a note that amounts include tax. Doesn't change the total.
+              </p>
+            </div>
+            <Controller
+              control={form.control}
+              name="is_simplified"
+              render={({ field }) => (
+                <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Notes + Payment instructions ─────────────────────────────────────── */}

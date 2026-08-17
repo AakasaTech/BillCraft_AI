@@ -1,11 +1,12 @@
 import { Document, Image, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
-import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
+import type { Invoice, InvoiceItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 export interface InvoicePDFProps {
-  invoice: Invoice
-  items:   InvoiceItem[]
-  client:  Client | null
-  org:     Organization
+  invoice:       Invoice
+  items:         InvoiceItem[]
+  client:        Client | null
+  clientSubunit?: ClientSubunit | null
+  org:           Organization
 }
 
 const c = {
@@ -32,7 +33,7 @@ const s = StyleSheet.create({
   sectionLabel:{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: c.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
   sectionVal:  { fontSize: 10, color: c.black, lineHeight: 1.6 },
   metaRow:     { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
-  metaLabel:   { fontSize: 9, color: c.muted, width: 72 },
+  metaLabel:   { fontSize: 9, color: c.muted, width: 90 },
   metaVal:     { fontSize: 9, color: c.black, fontFamily: 'Helvetica-Bold' },
   // Table
   tableHeader: { flexDirection: 'row', backgroundColor: c.bg, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 4, marginBottom: 2 },
@@ -76,12 +77,18 @@ const STATUS_LABEL: Record<string, string> = {
   paid: 'Paid', overdue: 'Overdue', cancelled: 'Cancelled', void: 'Void',
 }
 
-export function InvoicePDF({ invoice, items, client, org }: InvoicePDFProps) {
+export function InvoicePDF({ invoice, items, client, clientSubunit, org }: InvoicePDFProps) {
   const subtotal = invoice.subtotal
   const discount = invoice.discount_amount
   const tax      = invoice.tax_amount
   const total    = invoice.total
   const cur      = invoice.currency
+
+  // Ship-to falls back to the parent client's own address when no sub-unit is set.
+  const billToAddr1   = clientSubunit?.address_line1 ?? client?.address_line1 ?? null
+  const billToAddr2   = clientSubunit?.address_line2 ?? client?.address_line2 ?? null
+  const billToCity    = clientSubunit?.city           ?? client?.city           ?? null
+  const billToCountry = clientSubunit?.country_code   ?? client?.country_code   ?? null
 
   return (
     <Document title={`Invoice ${invoice.invoice_number}`} author={org.name}>
@@ -116,15 +123,17 @@ export function InvoicePDF({ invoice, items, client, org }: InvoicePDFProps) {
           <View style={{ flex: 1 }}>
             <Text style={s.sectionLabel}>Bill To</Text>
             <Text style={[s.sectionVal, { fontFamily: 'Helvetica-Bold' }]}>{client?.name ?? '—'}</Text>
-            {client?.email && <Text style={s.sectionVal}>{client.email}</Text>}
-            {client?.address_line1 && <Text style={s.sectionVal}>{client.address_line1}</Text>}
-            {(client?.city || client?.country_code) && (
+            {clientSubunit?.name && <Text style={s.sectionVal}>Attn: {clientSubunit.name}</Text>}
+            {client?.email       && <Text style={s.sectionVal}>{client.email}</Text>}
+            {billToAddr1         && <Text style={s.sectionVal}>{billToAddr1}</Text>}
+            {billToAddr2         && <Text style={s.sectionVal}>{billToAddr2}</Text>}
+            {(billToCity || billToCountry) && (
               <Text style={s.sectionVal}>
-                {[client?.city, client?.country_code].filter(Boolean).join(', ')}
+                {[billToCity, billToCountry].filter(Boolean).join(', ')}
               </Text>
             )}
           </View>
-          <View style={{ width: 180 }}>
+          <View style={{ width: 190 }}>
             <Text style={s.sectionLabel}>Invoice Details</Text>
             <View style={s.metaRow}>
               <Text style={s.metaLabel}>Issue date</Text>
@@ -142,6 +151,18 @@ export function InvoicePDF({ invoice, items, client, org }: InvoicePDFProps) {
               <View style={s.metaRow}>
                 <Text style={s.metaLabel}>Tax type</Text>
                 <Text style={s.metaVal}>{invoice.tax_type.toUpperCase()}</Text>
+              </View>
+            )}
+            {invoice.shipping_terms && (
+              <View style={s.metaRow}>
+                <Text style={s.metaLabel}>Shipping terms</Text>
+                <Text style={s.metaVal}>{invoice.shipping_terms}</Text>
+              </View>
+            )}
+            {invoice.local_transport_amount > 0 && (
+              <View style={s.metaRow}>
+                <Text style={s.metaLabel}>Local transport</Text>
+                <Text style={s.metaVal}>{fmt(invoice.local_transport_amount, cur)}</Text>
               </View>
             )}
           </View>
@@ -175,7 +196,7 @@ export function InvoicePDF({ invoice, items, client, org }: InvoicePDFProps) {
               <Text style={s.totalVal}>−{fmt(discount, cur)}</Text>
             </View>
           )}
-          {tax > 0 && (
+          {tax > 0 && !invoice.is_simplified && (
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Tax ({invoice.tax_rate}%)</Text>
               <Text style={s.totalVal}>{fmt(tax, cur)}</Text>
@@ -199,6 +220,11 @@ export function InvoicePDF({ invoice, items, client, org }: InvoicePDFProps) {
             </>
           )}
         </View>
+        {invoice.is_simplified && (
+          <Text style={{ marginTop: 4, fontSize: 8, color: c.muted, textAlign: 'right' }}>
+            All amounts include applicable tax
+          </Text>
+        )}
 
         {/* ── Notes + Payment ─────────────────────────────────── */}
         {(invoice.notes || invoice.payment_instructions) && (

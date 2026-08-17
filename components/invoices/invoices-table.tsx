@@ -25,11 +25,12 @@ export type InvoiceRow = {
 }
 
 const STATUS_TABS = [
-  { value: 'all',     label: 'All' },
-  { value: 'draft',   label: 'Draft' },
-  { value: 'sent',    label: 'Sent' },
-  { value: 'overdue', label: 'Overdue' },
-  { value: 'paid',    label: 'Paid' },
+  { value: 'all',              label: 'All' },
+  { value: 'draft',            label: 'Draft' },
+  { value: 'pending_approval', label: 'Pending approval' },
+  { value: 'sent',             label: 'Sent' },
+  { value: 'overdue',          label: 'Overdue' },
+  { value: 'paid',             label: 'Paid' },
 ]
 
 const VOIDABLE = new Set(['sent', 'viewed', 'partial', 'overdue'])

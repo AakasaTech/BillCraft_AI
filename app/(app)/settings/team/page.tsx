@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getPlanStatus } from '@/lib/subscription'
 import { TeamMembers } from '@/components/settings/team-members'
 import type { UserRole } from '@/types/database'
 
@@ -17,10 +18,10 @@ export default async function TeamSettingsPage() {
   const orgId       = userRecord.organization_id
   const callerRole  = userRecord.role as UserRole
 
-  const [{ data: membersRaw }, { data: invitationsRaw }] = await Promise.all([
+  const [{ data: membersRaw }, { data: invitationsRaw }, plan] = await Promise.all([
     supabase
       .from('users')
-      .select('id, name, email, role, created_at')
+      .select('id, name, email, role, is_invoice_approver, created_at')
       .eq('organization_id', orgId)
       .is('deleted_at', null)
       .order('created_at'),
@@ -32,14 +33,16 @@ export default async function TeamSettingsPage() {
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false }),
+    getPlanStatus(orgId, supabase),
   ])
 
   return (
     <TeamMembers
       currentUserId={user.id}
       callerRole={callerRole}
-      members={(membersRaw ?? []) as { id: string; name: string; email: string; role: UserRole; created_at: string }[]}
+      members={(membersRaw ?? []) as { id: string; name: string; email: string; role: UserRole; is_invoice_approver: boolean; created_at: string }[]}
       invitations={(invitationsRaw ?? []) as { id: string; email: string; role: UserRole; expires_at: string; created_at: string }[]}
+      canUseApprovalWorkflow={plan.canUseApprovalWorkflow}
     />
   )
 }

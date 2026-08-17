@@ -19,6 +19,11 @@ export const invoiceFormSchema = z.object({
   notes:                z.string().max(2000).optional().or(z.literal('')),
   payment_instructions: z.string().max(2000).optional().or(z.literal('')),
   items:                z.array(invoiceItemSchema).min(1, 'At least one item is required'),
+  // Trading-category fields — ignored/blank for service-category orgs
+  client_subunit_id:      z.string().uuid().optional().or(z.literal('')),
+  shipping_terms:         z.string().max(100).optional().or(z.literal('')),
+  local_transport_amount: z.number().min(0).default(0),
+  is_simplified:          z.boolean().default(false),
 })
 
 export type InvoiceFormData = z.infer<typeof invoiceFormSchema>

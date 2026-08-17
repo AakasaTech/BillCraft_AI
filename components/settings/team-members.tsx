@@ -11,6 +11,7 @@ import {
   inviteTeamMemberAction,
   revokeInvitationAction,
   removeMemberAction,
+  setInvoiceApproverAction,
 } from '@/app/actions/team'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -42,19 +44,28 @@ const ROLE_COLORS: Record<string, string> = {
   viewer: 'outline',
 }
 
-interface Member     { id: string; name: string; email: string; role: UserRole; created_at: string }
+interface Member     { id: string; name: string; email: string; role: UserRole; is_invoice_approver: boolean; created_at: string }
 interface Invitation { id: string; email: string; role: UserRole; expires_at: string; created_at: string }
 
 interface TeamMembersProps {
-  currentUserId: string
-  callerRole:    UserRole
-  members:       Member[]
-  invitations:   Invitation[]
+  currentUserId:          string
+  callerRole:             UserRole
+  members:                Member[]
+  invitations:            Invitation[]
+  canUseApprovalWorkflow: boolean
 }
 
-export function TeamMembers({ currentUserId, callerRole, members, invitations }: TeamMembersProps) {
+export function TeamMembers({ currentUserId, callerRole, members, invitations, canUseApprovalWorkflow }: TeamMembersProps) {
   const [isPending, startTransition] = useTransition()
   const canManage = callerRole === 'owner' || callerRole === 'admin'
+
+  const handleApproverToggle = (id: string, name: string, next: boolean) => {
+    startTransition(async () => {
+      const result = await setInvoiceApproverAction(id, next)
+      if (result?.error) toast.error(result.error)
+      else toast.success(next ? `${name} can now approve invoices.` : `${name} can no longer approve invoices.`)
+    })
+  }
 
   const form = useForm<InviteFormData>({
     resolver: zodResolver(inviteSchema),
@@ -169,10 +180,20 @@ export function TeamMembers({ currentUserId, callerRole, members, invitations }:
                   <p className="truncate text-xs text-muted-foreground">{member.email}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <Badge variant={ROLE_COLORS[member.role] as 'default' | 'secondary' | 'outline'}>
                   {ROLE_LABELS[member.role] ?? member.role}
                 </Badge>
+                {canUseApprovalWorkflow && canManage && (
+                  <div className="flex items-center gap-1.5" title="Can approve invoices before they're sent">
+                    <span className="text-xs text-muted-foreground">Approver</span>
+                    <Switch
+                      checked={member.is_invoice_approver}
+                      disabled={isPending}
+                      onCheckedChange={(next) => handleApproverToggle(member.id, member.name || member.email, next)}
+                    />
+                  </div>
+                )}
                 {callerRole === 'owner' &&
                   member.id !== currentUserId &&
                   member.role !== 'owner' && (

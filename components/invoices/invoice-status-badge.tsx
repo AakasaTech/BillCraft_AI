@@ -2,7 +2,8 @@ import { Badge } from '@/components/ui/badge'
 import type { InvoiceStatus } from '@/types/database'
 
 const config: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'info' }> = {
-  draft:     { label: 'Draft',     variant: 'secondary'   },
+  draft:            { label: 'Draft',             variant: 'secondary'   },
+  pending_approval: { label: 'Pending approval',  variant: 'warning'     },
   sent:      { label: 'Sent',      variant: 'default'     },
   viewed:    { label: 'Viewed',    variant: 'info'        },
   partial:   { label: 'Partial',   variant: 'warning'     },

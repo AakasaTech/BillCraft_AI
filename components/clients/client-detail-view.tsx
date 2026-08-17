@@ -15,10 +15,11 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { ClientFormDialog } from './client-form-dialog'
+import { ClientSubunitsSection } from './client-subunits-section'
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { formatCurrency, formatDate, getInitials } from '@/lib/utils'
 import { regeneratePortalTokenAction } from '@/app/actions/clients'
-import type { Client, InvoiceStatus } from '@/types/database'
+import type { Client, ClientSubunit, InvoiceStatus } from '@/types/database'
 
 interface InvoiceRow {
   id: string
@@ -40,12 +41,14 @@ interface Stats {
 }
 
 interface ClientDetailViewProps {
-  client:   Client
-  invoices: InvoiceRow[]
-  stats:    Stats
+  client:    Client
+  invoices:  InvoiceRow[]
+  stats:     Stats
+  isTrading: boolean
+  subunits:  ClientSubunit[]
 }
 
-export function ClientDetailView({ client, invoices, stats }: ClientDetailViewProps) {
+export function ClientDetailView({ client, invoices, stats, isTrading, subunits }: ClientDetailViewProps) {
   const router    = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [portalToken, setPortalToken] = useState(client.portal_token)
@@ -216,6 +219,11 @@ export function ClientDetailView({ client, invoices, stats }: ClientDetailViewPr
             </div>
           )}
         </div>
+
+        {/* Sub-units — trading-category orgs only */}
+        {isTrading && (
+          <ClientSubunitsSection clientId={client.id} subunits={subunits} />
+        )}
 
         {/* Invoice history */}
         <div className="lg:col-span-2">

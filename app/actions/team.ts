@@ -197,3 +197,39 @@ export async function removeMemberAction(targetUserId: string): Promise<ActionRe
   revalidatePath('/settings/team')
   return { success: true }
 }
+
+// ── Designate / un-designate an invoice approver (Agency plan) ──────────────
+
+export async function setInvoiceApproverAction(
+  targetUserId: string,
+  isApprover: boolean,
+): Promise<ActionResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: caller } = await supabase
+    .from('users').select('organization_id, role').eq('id', user.id).single()
+  if (!['owner', 'admin'].includes(caller?.role ?? '')) return { error: 'Insufficient permissions.' }
+
+  const { data: target } = await supabase
+    .from('users').select('organization_id').eq('id', targetUserId).single()
+  if (!target || target.organization_id !== caller!.organization_id) {
+    return { error: 'Member not found.' }
+  }
+
+  const { error } = await supabase
+    .from('users')
+    .update({ is_invoice_approver: isApprover })
+    .eq('id', targetUserId)
+
+  if (error) return { error: error.message }
+
+  logAudit(supabase, {
+    orgId: caller!.organization_id!, userId: user.id, entityType: 'member', entityId: targetUserId,
+    action: 'update', newValues: { is_invoice_approver: isApprover },
+  })
+
+  revalidatePath('/settings/team')
+  return { success: true }
+}

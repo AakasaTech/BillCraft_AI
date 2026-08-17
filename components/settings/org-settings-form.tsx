@@ -31,6 +31,7 @@ export function OrgSettingsForm({ org, canEdit }: OrgSettingsFormProps) {
     resolver: zodResolver(orgSettingsSchema),
     defaultValues: {
       name:                    org.name,
+      category:                org.category ?? 'service',
       default_currency:        org.default_currency,
       timezone:                org.timezone,
       country_code:            org.country_code ?? '',
@@ -99,6 +100,28 @@ export function OrgSettingsForm({ org, canEdit }: OrgSettingsFormProps) {
             <Label htmlFor="website">Website</Label>
             <Input id="website" placeholder="https://example.com" {...field('website')} />
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Organization category</Label>
+          <Controller
+            control={form.control}
+            name="category"
+            render={({ field: f }) => (
+              <Select onValueChange={f.onChange} value={f.value} disabled={!canEdit}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="service">Service — standard invoicing</SelectItem>
+                  <SelectItem value="trading">Trading Company — proformas, shipping terms, HS codes</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          <p className="text-xs text-muted-foreground">
+            Trading Company unlocks proforma invoices and import/export fields (shipping terms, HS codes, local transport) across invoices and proformas.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

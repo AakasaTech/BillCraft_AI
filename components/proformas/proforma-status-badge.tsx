@@ -1,0 +1,20 @@
+import { cn } from '@/lib/utils'
+import type { ProformaStatus } from '@/types/database'
+
+const STATUS_CONFIG: Record<ProformaStatus, { label: string; className: string }> = {
+  draft:     { label: 'Draft',     className: 'bg-muted text-muted-foreground' },
+  sent:      { label: 'Sent',      className: 'bg-blue-100 text-blue-700' },
+  viewed:    { label: 'Viewed',    className: 'bg-purple-100 text-purple-700' },
+  accepted:  { label: 'Accepted',  className: 'bg-green-100 text-green-700' },
+  converted: { label: 'Converted', className: 'bg-teal-100 text-teal-700' },
+  expired:   { label: 'Expired',   className: 'bg-orange-100 text-orange-700' },
+}
+
+export function ProformaStatusBadge({ status }: { status: ProformaStatus }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, className: 'bg-muted text-muted-foreground' }
+  return (
+    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold', cfg.className)}>
+      {cfg.label}
+    </span>
+  )
+}
