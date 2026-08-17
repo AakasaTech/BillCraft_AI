@@ -118,9 +118,34 @@ export interface Organization {
   late_fee_enabled: boolean;
   late_fee_percentage: number;
   late_fee_after_days: number;
+  active_email_provider: EmailConnectionProvider | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+}
+
+export type EmailConnectionProvider = 'google' | 'microsoft';
+export type EmailConnectionStatus   = 'pending' | 'connected' | 'error' | 'revoked';
+
+export interface OrgEmailConnection {
+  id: string;
+  organization_id: string;
+  provider: EmailConnectionProvider;
+  client_id: string;
+  client_secret: string; // encrypted at rest — never send to the client
+  tenant_id: string | null;
+  connected_email: string | null;
+  refresh_token: string | null; // encrypted at rest — never send to the client
+  access_token: string | null;  // encrypted at rest — never send to the client
+  access_token_expires_at: string | null;
+  status: EmailConnectionStatus;
+  last_error: string | null;
+  oauth_state: string | null;
+  oauth_state_expires_at: string | null;
+  connected_by: string | null;
+  connected_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {

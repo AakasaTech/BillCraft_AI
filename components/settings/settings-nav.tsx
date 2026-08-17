@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, Building2, Key, Mail, ShieldCheck, User, Users } from 'lucide-react'
+import { Bell, Building2, Key, Mail, Send, ShieldCheck, User, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -11,6 +11,7 @@ const NAV = [
   { href: '/settings/team',            label: 'Team',             icon: Users      },
   { href: '/settings/notifications',   label: 'Notifications',    icon: Bell       },
   { href: '/settings/email-templates', label: 'Email templates',  icon: Mail       },
+  { href: '/settings/email',           label: 'Email sending',    icon: Send       },
   { href: '/settings/api',             label: 'API keys',         icon: Key        },
   { href: '/settings/audit',           label: 'Audit log',        icon: ShieldCheck },
 ]

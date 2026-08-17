@@ -5,7 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getPlanStatus } from '@/lib/subscription'
-import { sendEmail, isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
+import { isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
+import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildProformaEmail } from '@/lib/email/proforma-template'
 import { proformaFormSchema, type ProformaFormData } from '@/lib/validations/proformas'
 import type {
@@ -552,8 +553,7 @@ export async function sendProformaEmailAction(id: string): Promise<ActionResult>
 
   const ccList = (client as Client).cc_emails?.filter(Boolean) ?? []
 
-  const { id: sendId, error: sendError } = await sendEmail({
-    from:    fromEmail,
+  const { id: sendId, error: sendError } = await sendClientFacingEmail(ctx.orgId, ctx.supabase, fromEmail, {
     to:      client.email,
     cc:      ccList.length ? ccList : undefined,
     subject,

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   BookOpen, Zap, FileText, ClipboardList, RefreshCw,
-  CreditCard, TrendingDown, Sparkles, Bell, HelpCircle,
+  CreditCard, TrendingDown, Sparkles, Bell, Send, HelpCircle,
 } from 'lucide-react'
 
 const NAV = [
@@ -17,6 +17,7 @@ const NAV = [
   { href: '/docs/expenses',                 label: 'Expenses',              icon: TrendingDown },
   { href: '/docs/ai-features',              label: 'AI Features',           icon: Sparkles },
   { href: '/docs/notifications-and-email',  label: 'Email & Notifications', icon: Bell },
+  { href: '/docs/custom-email-sending',     label: 'Custom Email Sending',  icon: Send },
   { href: '/docs/faq',                      label: 'FAQ',                   icon: HelpCircle },
 ]
 

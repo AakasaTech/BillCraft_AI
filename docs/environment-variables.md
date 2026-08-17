@@ -101,6 +101,16 @@ PayPal billing is optional. Leave all `PAYPAL_*` variables blank to disable it e
 
 ---
 
+## Custom email sending (org-connected mailboxes)
+
+| Variable | Required | Description |
+|---|---|---|
+| `ENCRYPTION_KEY` | For custom email sending | A 32-byte key, base64-encoded, used to encrypt OAuth client secrets and refresh tokens for orgs that connect their own Google Workspace/Microsoft 365 mailbox (`org_email_connections` table). Generate with `openssl rand -base64 32`. **Rotating this key invalidates every org's stored connection** — they'd need to reconnect. |
+
+Without this key, the "Settings → Email sending" page still loads, but saving a Google/Microsoft connection fails at the encryption step. This is independent of the platform-wide `RESEND_API_KEY`/`GMAIL_*` sender — orgs that don't connect their own mailbox are unaffected either way. See [Custom Email Sending](/docs/custom-email-sending) for the end-user setup flow.
+
+---
+
 ## Vercel Cron
 
 | Variable | Required | Description |

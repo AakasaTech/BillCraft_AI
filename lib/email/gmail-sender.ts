@@ -61,11 +61,17 @@ function postJson(url: string, body: unknown, token: string): Promise<Record<str
 
 // ── OAuth token ───────────────────────────────────────────────────────────────
 
-async function getAccessToken(): Promise<string> {
+export interface GmailCredentials {
+  clientId:     string
+  clientSecret: string
+  refreshToken: string
+}
+
+async function getAccessToken(creds: GmailCredentials): Promise<string> {
   const resp = await postForm('https://oauth2.googleapis.com/token', {
-    client_id:     process.env.GMAIL_CLIENT_ID!,
-    client_secret: process.env.GMAIL_CLIENT_SECRET!,
-    refresh_token: process.env.GMAIL_REFRESH_TOKEN!,
+    client_id:     creds.clientId,
+    client_secret: creds.clientSecret,
+    refresh_token: creds.refreshToken,
     grant_type:    'refresh_token',
   })
   if (!resp.access_token) {
@@ -88,7 +94,7 @@ function encodeSubject(subject: string): string {
   return `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`
 }
 
-interface GmailSendOptions {
+export interface GmailSendOptions {
   from:         string
   to:           string
   cc?:          string[]
@@ -149,9 +155,13 @@ function buildMime(opts: GmailSendOptions): Buffer {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export async function sendViaGmail(opts: GmailSendOptions): Promise<{ id?: string; error?: string }> {
+/** Low-level send given already-known OAuth app credentials + refresh token. */
+export async function sendGmailMessage(
+  creds: GmailCredentials,
+  opts: GmailSendOptions,
+): Promise<{ id?: string; error?: string }> {
   try {
-    const token  = await getAccessToken()
+    const token  = await getAccessToken(creds)
     const mime   = buildMime(opts)
     // Gmail API requires base64url (RFC 4648 §5: - and _ instead of + and /)
     const raw    = mime.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -168,4 +178,16 @@ export async function sendViaGmail(opts: GmailSendOptions): Promise<{ id?: strin
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) }
   }
+}
+
+/** Platform-wide sender — single account configured via env vars. */
+export async function sendViaGmail(opts: GmailSendOptions): Promise<{ id?: string; error?: string }> {
+  return sendGmailMessage(
+    {
+      clientId:     process.env.GMAIL_CLIENT_ID!,
+      clientSecret: process.env.GMAIL_CLIENT_SECRET!,
+      refreshToken: process.env.GMAIL_REFRESH_TOKEN!,
+    },
+    opts,
+  )
 }

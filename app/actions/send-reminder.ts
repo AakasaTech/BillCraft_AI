@@ -3,7 +3,8 @@
 import { createElement } from 'react'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { sendEmail, isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
+import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
+import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildReminderEmail } from '@/lib/email/reminder-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
@@ -128,8 +129,7 @@ async function _sendReminderAction(id: string, aiDraftBody?: string): Promise<Ac
 
   const ccList = (client as Client).cc_emails?.filter(Boolean) ?? []
 
-  const { id: sendId, error: sendError } = await sendEmail({
-    from:    fromEmail,
+  const { id: sendId, error: sendError } = await sendClientFacingEmail(orgId, supabase, fromEmail, {
     to:      client.email,
     cc:      ccList.length ? ccList : undefined,
     subject,
