@@ -9,7 +9,7 @@ import { buildEstimateEmail } from '@/lib/email/estimate-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { estimateFormSchema, type EstimateFormData } from '@/lib/validations/estimates'
 import { convertEstimateToProformaAction } from '@/app/actions/proformas'
-import type { Estimate, EstimateItem, Client, Organization } from '@/types/database'
+import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
 
@@ -49,10 +49,11 @@ export async function createEstimateAction(data: EstimateFormData): Promise<Acti
   const { data: estimate, error: insertErr } = await ctx.supabase
     .from('estimates')
     .insert({
-      organization_id: ctx.orgId,
-      client_id:       d.client_id,
-      created_by:      ctx.userId,
-      estimate_number: estNumber,
+      organization_id:   ctx.orgId,
+      client_id:         d.client_id,
+      client_subunit_id: d.client_subunit_id || null,
+      created_by:        ctx.userId,
+      estimate_number:   estNumber,
       status:          'draft',
       issue_date:      d.issue_date,
       expiry_date:     d.expiry_date || null,
@@ -105,8 +106,9 @@ export async function updateEstimateAction(id: string, data: EstimateFormData): 
   const { error: updateErr } = await ctx.supabase
     .from('estimates')
     .update({
-      client_id:       d.client_id,
-      estimate_number: d.estimate_number,
+      client_id:         d.client_id,
+      client_subunit_id: d.client_subunit_id || null,
+      estimate_number:   d.estimate_number,
       issue_date:      d.issue_date,
       expiry_date:     d.expiry_date || null,
       currency:        d.currency,
@@ -223,12 +225,22 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
   const client   = estimate.clients
   if (!client?.email) return { error: 'Client has no email address.' }
 
+  let clientSubunit: ClientSubunit | null = null
+  if (estimate.client_subunit_id) {
+    const { data } = await ctx.supabase
+      .from('client_subunits')
+      .select('*')
+      .eq('id', estimate.client_subunit_id)
+      .single()
+    clientSubunit = (data as ClientSubunit | null) ?? null
+  }
+
   const { renderToBuffer } = await import('@react-pdf/renderer')
   const { EstimatePDF }    = await import('@/lib/pdf/estimate-pdf')
   const items              = (itemsRaw ?? []) as EstimateItem[]
 
   const pdfBuffer = await renderToBuffer(
-    createElement(EstimatePDF, { estimate, items, client, org: org as Organization }) as any,
+    createElement(EstimatePDF, { estimate, items, client, clientSubunit, org: org as Organization }) as any,
   )
 
   const shareUrl = estimate.share_token && process.env.NEXT_PUBLIC_APP_URL
@@ -347,10 +359,11 @@ export async function convertToInvoiceAction(id: string): Promise<{ error?: stri
   const { data: invoice, error: invErr } = await ctx.supabase
     .from('invoices')
     .insert({
-      organization_id:  ctx.orgId,
-      client_id:        estimate.client_id,
-      created_by:       ctx.userId,
-      invoice_number:   invoiceNumber,
+      organization_id:    ctx.orgId,
+      client_id:          estimate.client_id,
+      client_subunit_id:  estimate.client_subunit_id,
+      created_by:         ctx.userId,
+      invoice_number:     invoiceNumber,
       status:           'draft',
       issue_date:       today,
       due_date:         null,

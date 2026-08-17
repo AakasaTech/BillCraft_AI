@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState, useTransition } from 'react'
-import { useForm, useFieldArray, useWatch } from 'react-hook-form'
+import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
@@ -24,19 +24,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 type FormData = z.infer<typeof estimateFormSchema>
 
 interface ClientOption  { id: string; name: string }
+interface SubunitOption { id: string; client_id: string; name: string }
 interface ProductOption { id: string; name: string; description: string | null; unit_price: number; currency: string }
 
 interface EstimateEditorProps {
   estimateId?:    string
   defaultCurrency: string
   clients:        ClientOption[]
+  subunits?:      SubunitOption[]
   products?:      ProductOption[]
   defaultValues?: Partial<EstimateFormData>
   nextEstimateNumber?: string
 }
 
 export function EstimateEditor({
-  estimateId, defaultCurrency, clients, products = [], defaultValues, nextEstimateNumber,
+  estimateId, defaultCurrency, clients, subunits = [], products = [], defaultValues, nextEstimateNumber,
 }: EstimateEditorProps) {
   const router = useRouter()
   const isEdit = !!estimateId
@@ -47,7 +49,8 @@ export function EstimateEditor({
   const form = useForm<FormData>({
     resolver: zodResolver(estimateFormSchema),
     defaultValues: {
-      client_id:       defaultValues?.client_id       ?? '',
+      client_id:         defaultValues?.client_id         ?? '',
+      client_subunit_id: defaultValues?.client_subunit_id ?? '',
       estimate_number: defaultValues?.estimate_number ?? nextEstimateNumber ?? '',
       issue_date:      defaultValues?.issue_date       ?? new Date().toISOString().slice(0, 10),
       expiry_date:     defaultValues?.expiry_date      ?? '',
@@ -70,6 +73,9 @@ export function EstimateEditor({
   const watchedTaxRate  = useWatch({ control: form.control, name: 'tax_rate' })
   const watchedTaxType  = useWatch({ control: form.control, name: 'tax_type' })
   const watchedCurrency = useWatch({ control: form.control, name: 'currency' })
+  const watchedClientId = useWatch({ control: form.control, name: 'client_id' })
+
+  const clientSubunits = subunits.filter(s => s.client_id === watchedClientId)
 
   const subtotal  = watchedItems.reduce((s, i) => s + (i.quantity || 0) * (i.unit_price || 0), 0)
   const afterDisc = Math.max(0, subtotal - (watchedDiscount || 0))
@@ -112,6 +118,28 @@ export function EstimateEditor({
               <p className="text-xs text-destructive">{form.formState.errors.client_id.message}</p>
             )}
           </div>
+
+          {clientSubunits.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Sub unit</Label>
+              <Controller
+                control={form.control}
+                name="client_subunit_id"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Client default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientSubunits.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="estimate_number">Estimate number <span className="text-destructive">*</span></Label>

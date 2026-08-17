@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { Separator } from '@/components/ui/separator'
 import { EstimateRespondForm } from '@/components/estimates/estimate-respond-form'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Estimate, EstimateItem, Client, Organization, EstimateStatus } from '@/types/database'
+import type { Estimate, EstimateItem, Client, ClientSubunit, Organization, EstimateStatus } from '@/types/database'
 
 export const metadata = {
   title: 'Estimate',
@@ -45,9 +45,12 @@ export default async function PublicEstimatePage({
 
   if (!estimateRaw) notFound()
 
-  const [{ data: orgRaw }, { data: itemsRaw }] = await Promise.all([
+  const [{ data: orgRaw }, { data: itemsRaw }, { data: subunitRaw }] = await Promise.all([
     supabase.from('organizations').select('*').eq('id', estimateRaw.organization_id).single(),
     supabase.from('estimate_items').select('*').eq('estimate_id', estimateRaw.id).order('sort_order'),
+    estimateRaw.client_subunit_id
+      ? supabase.from('client_subunits').select('*').eq('id', estimateRaw.client_subunit_id).single()
+      : Promise.resolve({ data: null }),
   ])
 
   // Mark as viewed on first open (sent → viewed)
@@ -58,11 +61,16 @@ export default async function PublicEstimatePage({
       .eq('id', estimateRaw.id)
   }
 
-  const estimate = estimateRaw as Estimate & { clients: Client | null }
-  const client   = estimate.clients
-  const org      = orgRaw as Organization | null
-  const items    = (itemsRaw ?? []) as EstimateItem[]
-  const status   = estimate.status as EstimateStatus
+  const estimate      = estimateRaw as Estimate & { clients: Client | null }
+  const client        = estimate.clients
+  const clientSubunit = subunitRaw as ClientSubunit | null
+  const org           = orgRaw as Organization | null
+  const items         = (itemsRaw ?? []) as EstimateItem[]
+  const status        = estimate.status as EstimateStatus
+
+  const billToAddr1   = clientSubunit?.address_line1 ?? client?.address_line1
+  const billToCity    = clientSubunit?.city           ?? client?.city
+  const billToCountry = clientSubunit?.country_code   ?? client?.country_code
 
   const canRespond = status === 'sent' || status === 'viewed'
 
@@ -142,11 +150,12 @@ export default async function PublicEstimatePage({
               {client ? (
                 <div className="space-y-0.5">
                   <p className="font-semibold">{client.name}</p>
-                  {client.email         && <p className="text-sm text-muted-foreground">{client.email}</p>}
-                  {client.address_line1 && <p className="text-sm text-muted-foreground">{client.address_line1}</p>}
-                  {(client.city || client.country_code) && (
+                  {clientSubunit?.name && <p className="text-sm text-muted-foreground">Attn: {clientSubunit.name}</p>}
+                  {client.email        && <p className="text-sm text-muted-foreground">{client.email}</p>}
+                  {billToAddr1         && <p className="text-sm text-muted-foreground">{billToAddr1}</p>}
+                  {(billToCity || billToCountry) && (
                     <p className="text-sm text-muted-foreground">
-                      {[client.city, client.country_code].filter(Boolean).join(', ')}
+                      {[billToCity, billToCountry].filter(Boolean).join(', ')}
                     </p>
                   )}
                 </div>

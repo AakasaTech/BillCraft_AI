@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
+import type { Invoice, InvoiceItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 export const metadata = {
   title: 'Invoice',
@@ -27,9 +27,12 @@ export default async function PublicInvoicePage({
   if (!invoice) notFound()
 
   // Fetch org and items in parallel
-  const [{ data: orgRaw }, { data: itemsRaw }] = await Promise.all([
+  const [{ data: orgRaw }, { data: itemsRaw }, { data: subunitRaw }] = await Promise.all([
     supabase.from('organizations').select('*').eq('id', invoice.organization_id).single(),
     supabase.from('invoice_items').select('*').eq('invoice_id', invoice.id).order('sort_order'),
+    invoice.client_subunit_id
+      ? supabase.from('client_subunits').select('*').eq('id', invoice.client_subunit_id).single()
+      : Promise.resolve({ data: null }),
   ])
 
   // Mark as viewed on first open (only transitions from 'sent' → 'viewed')
@@ -40,12 +43,18 @@ export default async function PublicInvoicePage({
       .eq('id', invoice.id)
   }
 
-  const inv    = invoice as Invoice & { clients: Client | null }
-  const client = inv.clients
-  const org    = orgRaw as Organization | null
-  const items  = (itemsRaw ?? []) as InvoiceItem[]
+  const inv           = invoice as Invoice & { clients: Client | null }
+  const client        = inv.clients
+  const clientSubunit = subunitRaw as ClientSubunit | null
+  const org           = orgRaw as Organization | null
+  const items         = (itemsRaw ?? []) as InvoiceItem[]
 
   const isPaid = inv.status === 'paid'
+
+  const billToAddr1   = clientSubunit?.address_line1 ?? client?.address_line1
+  const billToAddr2   = clientSubunit?.address_line2 ?? client?.address_line2
+  const billToCity    = clientSubunit?.city           ?? client?.city
+  const billToCountry = clientSubunit?.country_code   ?? client?.country_code
 
   return (
     <div className="min-h-screen bg-muted/30 py-10 px-4">
@@ -112,12 +121,13 @@ export default async function PublicInvoicePage({
               {client ? (
                 <div className="space-y-0.5">
                   <p className="font-semibold">{client.name}</p>
-                  {client.email    && <p className="text-sm text-muted-foreground">{client.email}</p>}
-                  {client.address_line1 && <p className="text-sm text-muted-foreground">{client.address_line1}</p>}
-                  {client.address_line2 && <p className="text-sm text-muted-foreground">{client.address_line2}</p>}
-                  {(client.city || client.country_code) && (
+                  {clientSubunit?.name && <p className="text-sm text-muted-foreground">Attn: {clientSubunit.name}</p>}
+                  {client.email && <p className="text-sm text-muted-foreground">{client.email}</p>}
+                  {billToAddr1  && <p className="text-sm text-muted-foreground">{billToAddr1}</p>}
+                  {billToAddr2  && <p className="text-sm text-muted-foreground">{billToAddr2}</p>}
+                  {(billToCity || billToCountry) && (
                     <p className="text-sm text-muted-foreground">
-                      {[client.city, client.country_code].filter(Boolean).join(', ')}
+                      {[billToCity, billToCountry].filter(Boolean).join(', ')}
                     </p>
                   )}
                 </div>
@@ -162,6 +172,21 @@ export default async function PublicInvoicePage({
                   </p>
                 </div>
               ))}
+              {inv.local_transport_amount > 0 && (
+                <div className="py-3 grid grid-cols-1 gap-1 sm:grid-cols-[1fr_80px_120px_100px] sm:gap-2 sm:items-center">
+                  <p className="font-medium">Local Transport</p>
+                  <p className="text-sm text-muted-foreground sm:text-foreground">
+                    <span className="sm:hidden text-muted-foreground">Qty: </span>1
+                  </p>
+                  <p className="text-sm text-muted-foreground sm:text-foreground">
+                    <span className="sm:hidden text-muted-foreground">Unit: </span>
+                    {formatCurrency(inv.local_transport_amount, inv.currency)}
+                  </p>
+                  <p className="font-semibold sm:text-right">
+                    {formatCurrency(inv.local_transport_amount, inv.currency)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

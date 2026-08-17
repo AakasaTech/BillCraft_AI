@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createElement } from 'react'
 import { createServiceClient } from '@/lib/supabase/server'
-import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
+import type { Invoice, InvoiceItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 export const runtime     = 'nodejs'
 export const dynamic     = 'force-dynamic'
@@ -23,9 +23,14 @@ export async function GET(
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const [{ data: itemsRaw }, { data: orgRaw }] = await Promise.all([
+  const inv = invoice as Invoice & { clients: Client | null }
+
+  const [{ data: itemsRaw }, { data: orgRaw }, { data: subunitRaw }] = await Promise.all([
     supabase.from('invoice_items').select('*').eq('invoice_id', invoice.id).order('sort_order'),
     supabase.from('organizations').select('*').eq('id', invoice.organization_id).single(),
+    inv.client_subunit_id
+      ? supabase.from('client_subunits').select('*').eq('id', inv.client_subunit_id).single()
+      : Promise.resolve({ data: null }),
   ])
 
   if (!orgRaw) return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
@@ -33,13 +38,13 @@ export async function GET(
   const { renderToBuffer } = await import('@react-pdf/renderer')
   const { InvoicePDF }     = await import('@/lib/pdf/invoice-pdf')
 
-  const inv    = invoice as Invoice & { clients: Client | null }
-  const items  = (itemsRaw ?? []) as InvoiceItem[]
-  const client = inv.clients
-  const org    = orgRaw as Organization
+  const items         = (itemsRaw ?? []) as InvoiceItem[]
+  const client        = inv.clients
+  const clientSubunit = subunitRaw as ClientSubunit | null
+  const org           = orgRaw as Organization
 
   const buffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org }) as any,
+    createElement(InvoicePDF, { invoice: inv, items, client, clientSubunit, org }) as any,
   )
 
   return new Response(new Uint8Array(buffer), {

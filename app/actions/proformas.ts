@@ -312,11 +312,12 @@ export async function convertEstimateToProformaAction(
   const { data: proforma, error: proErr } = await ctx.supabase
     .from('proformas')
     .insert({
-      organization_id: ctx.orgId,
-      client_id:       estimate.client_id,
-      created_by:      ctx.userId,
-      proforma_number: proformaNumber,
-      status:          'draft',
+      organization_id:   ctx.orgId,
+      client_id:         estimate.client_id,
+      client_subunit_id: estimate.client_subunit_id,
+      created_by:        ctx.userId,
+      proforma_number:   proformaNumber,
+      status:            'draft',
       issue_date:      today,
       expiry_date:     null,
       currency:        estimate.currency,

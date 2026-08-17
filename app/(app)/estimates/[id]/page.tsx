@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { EstimateDetailView } from '@/components/estimates/estimate-detail-view'
-import type { Estimate, EstimateItem, Client, Organization } from '@/types/database'
+import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 export const metadata = { title: 'Estimate — BillCraft AI' }
 
@@ -43,11 +43,22 @@ export default async function EstimateDetailPage({ params }: { params: Promise<{
   const client   = estimate.clients
   if (!client) notFound()
 
+  let clientSubunit: ClientSubunit | null = null
+  if (estimate.client_subunit_id) {
+    const { data } = await supabase
+      .from('client_subunits')
+      .select('*')
+      .eq('id', estimate.client_subunit_id)
+      .single()
+    clientSubunit = (data as ClientSubunit | null) ?? null
+  }
+
   return (
     <EstimateDetailView
       estimate={estimate}
       items={(itemsRaw ?? []) as EstimateItem[]}
       client={client}
+      clientSubunit={clientSubunit}
       org={org as Organization}
     />
   )

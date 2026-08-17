@@ -215,6 +215,20 @@ export function ProformaDetailView({ proforma, items, client, clientSubunit, org
                 <p className="font-semibold sm:text-right">{formatCurrency(item.total, proforma.currency)}</p>
               </div>
             ))}
+            {proforma.local_transport_amount > 0 && (
+              <div className="py-3 grid grid-cols-1 gap-1 sm:grid-cols-[1fr_80px_100px_80px_80px] sm:gap-2 sm:items-center">
+                <p className="font-medium">Local Transport</p>
+                <p className="text-sm text-muted-foreground sm:text-foreground">
+                  <span className="sm:hidden text-muted-foreground">Qty: </span>1
+                </p>
+                <p className="text-sm text-muted-foreground sm:text-foreground">
+                  <span className="sm:hidden text-muted-foreground">Unit: </span>
+                  {formatCurrency(proforma.local_transport_amount, proforma.currency)}
+                </p>
+                <p className="text-sm text-muted-foreground sm:text-foreground">—</p>
+                <p className="font-semibold sm:text-right">{formatCurrency(proforma.local_transport_amount, proforma.currency)}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -235,12 +249,6 @@ export function ProformaDetailView({ proforma, items, client, clientSubunit, org
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tax ({proforma.tax_rate}%)</span>
               <span>{formatCurrency(proforma.tax_amount, proforma.currency)}</span>
-            </div>
-          )}
-          {proforma.local_transport_amount > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Local transport</span>
-              <span>{formatCurrency(proforma.local_transport_amount, proforma.currency)}</span>
             </div>
           )}
           <Separator />

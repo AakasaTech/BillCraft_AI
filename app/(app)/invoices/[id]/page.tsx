@@ -168,6 +168,21 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 </p>
               </div>
             ))}
+            {inv.local_transport_amount > 0 && (
+              <div className="py-3 grid grid-cols-1 gap-1 sm:grid-cols-[1fr_80px_120px_100px] sm:gap-2 sm:items-center">
+                <p className="font-medium">Local Transport</p>
+                <p className="text-sm text-muted-foreground sm:text-foreground">
+                  <span className="sm:hidden text-muted-foreground">Qty: </span>1
+                </p>
+                <p className="text-sm text-muted-foreground sm:text-foreground">
+                  <span className="sm:hidden text-muted-foreground">Unit: </span>
+                  {formatCurrency(inv.local_transport_amount, inv.currency)}
+                </p>
+                <p className="font-semibold sm:text-right">
+                  {formatCurrency(inv.local_transport_amount, inv.currency)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

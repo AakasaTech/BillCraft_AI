@@ -1,11 +1,12 @@
 import { Document, Image, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
-import type { Estimate, EstimateItem, Client, Organization } from '@/types/database'
+import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 export interface EstimatePDFProps {
-  estimate: Estimate
-  items:    EstimateItem[]
-  client:   Client | null
-  org:      Organization
+  estimate:      Estimate
+  items:         EstimateItem[]
+  client:        Client | null
+  clientSubunit?: ClientSubunit | null
+  org:           Organization
 }
 
 const c = {
@@ -72,12 +73,17 @@ const STATUS_LABEL: Record<string, string> = {
   accepted: 'Accepted', declined: 'Declined', expired: 'Expired',
 }
 
-export function EstimatePDF({ estimate, items, client, org }: EstimatePDFProps) {
+export function EstimatePDF({ estimate, items, client, clientSubunit, org }: EstimatePDFProps) {
   const subtotal = estimate.subtotal
   const discount = estimate.discount_amount
   const tax      = estimate.tax_amount
   const total    = estimate.total
   const cur      = estimate.currency
+
+  const billToAddr1   = clientSubunit?.address_line1 ?? client?.address_line1 ?? null
+  const billToAddr2   = clientSubunit?.address_line2 ?? client?.address_line2 ?? null
+  const billToCity    = clientSubunit?.city           ?? client?.city           ?? null
+  const billToCountry = clientSubunit?.country_code   ?? client?.country_code   ?? null
 
   return (
     <Document title={`Estimate ${estimate.estimate_number}`} author={org.name}>
@@ -112,11 +118,13 @@ export function EstimatePDF({ estimate, items, client, org }: EstimatePDFProps) 
           <View style={{ flex: 1 }}>
             <Text style={s.sectionLabel}>Prepared For</Text>
             <Text style={[s.sectionVal, { fontFamily: 'Helvetica-Bold' }]}>{client?.name ?? '—'}</Text>
-            {client?.email        && <Text style={s.sectionVal}>{client.email}</Text>}
-            {client?.address_line1 && <Text style={s.sectionVal}>{client.address_line1}</Text>}
-            {(client?.city || client?.country_code) && (
+            {clientSubunit?.name && <Text style={s.sectionVal}>Attn: {clientSubunit.name}</Text>}
+            {client?.email       && <Text style={s.sectionVal}>{client.email}</Text>}
+            {billToAddr1         && <Text style={s.sectionVal}>{billToAddr1}</Text>}
+            {billToAddr2         && <Text style={s.sectionVal}>{billToAddr2}</Text>}
+            {(billToCity || billToCountry) && (
               <Text style={s.sectionVal}>
-                {[client?.city, client?.country_code].filter(Boolean).join(', ')}
+                {[billToCity, billToCountry].filter(Boolean).join(', ')}
               </Text>
             )}
           </View>

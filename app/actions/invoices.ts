@@ -25,10 +25,11 @@ function calcTotals(data: InvoiceFormData) {
     (s, i) => s + (Number.isFinite(i.quantity * i.unit_price) ? i.quantity * i.unit_price : 0),
     0
   )
-  const discount = Math.min(data.discount_amount ?? 0, subtotal)
-  const taxBase  = subtotal - discount
-  const tax      = (data.tax_rate ?? 0) > 0 ? taxBase * (data.tax_rate / 100) : 0
-  const total    = taxBase + tax
+  const discount       = Math.min(data.discount_amount ?? 0, subtotal)
+  const taxBase        = subtotal - discount
+  const tax            = (data.tax_rate ?? 0) > 0 ? taxBase * (data.tax_rate / 100) : 0
+  const localTransport = data.local_transport_amount ?? 0
+  const total           = taxBase + tax + localTransport
   return { subtotal, discount, tax, total }
 }
 

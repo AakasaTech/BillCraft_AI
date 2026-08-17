@@ -7,7 +7,7 @@ import { sendEmail, isEmailConfigured, resolveFromAddress } from '@/lib/email/ma
 import { buildInvoiceEmail } from '@/lib/email/invoice-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { approvalGateActive } from '@/lib/invoice-approval'
-import type { Invoice, InvoiceItem, Client, Organization } from '@/types/database'
+import type { Invoice, InvoiceItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
 
@@ -63,13 +63,23 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
     return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
   }
 
+  let clientSubunit: ClientSubunit | null = null
+  if (inv.client_subunit_id) {
+    const { data } = await supabase
+      .from('client_subunits')
+      .select('*')
+      .eq('id', inv.client_subunit_id)
+      .single()
+    clientSubunit = (data as ClientSubunit | null) ?? null
+  }
+
   // Generate PDF buffer
   const { renderToBuffer } = await import('@react-pdf/renderer')
   const { InvoicePDF }     = await import('@/lib/pdf/invoice-pdf')
   const items              = (itemsRaw ?? []) as InvoiceItem[]
 
   const pdfBuffer = await renderToBuffer(
-    createElement(InvoicePDF, { invoice: inv, items, client, org: org as Organization }) as any,
+    createElement(InvoicePDF, { invoice: inv, items, client, clientSubunit, org: org as Organization }) as any,
   )
 
   // Build + send email

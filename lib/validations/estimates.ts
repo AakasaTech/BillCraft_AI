@@ -8,7 +8,8 @@ const itemSchema = z.object({
 })
 
 export const estimateFormSchema = z.object({
-  client_id:       z.string().uuid(),
+  client_id:         z.string().uuid(),
+  client_subunit_id: z.string().uuid().optional().or(z.literal('')),
   estimate_number: z.string().min(1),
   issue_date:      z.string().min(1),
   expiry_date:     z.string().optional().or(z.literal('')),

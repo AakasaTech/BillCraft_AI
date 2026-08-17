@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createElement } from 'react'
 import { createServiceClient } from '@/lib/supabase/server'
-import type { Estimate, EstimateItem, Client, Organization } from '@/types/database'
+import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 export const runtime     = 'nodejs'
 export const dynamic     = 'force-dynamic'
@@ -26,9 +26,12 @@ export async function GET(
   const estimate = estimateRaw as Estimate & { clients: Client | null }
   const client   = estimate.clients
 
-  const [{ data: orgRaw }, { data: itemsRaw }] = await Promise.all([
+  const [{ data: orgRaw }, { data: itemsRaw }, { data: subunitRaw }] = await Promise.all([
     supabase.from('organizations').select('*').eq('id', estimate.organization_id).single(),
     supabase.from('estimate_items').select('*').eq('estimate_id', estimate.id).order('sort_order'),
+    estimate.client_subunit_id
+      ? supabase.from('client_subunits').select('*').eq('id', estimate.client_subunit_id).single()
+      : Promise.resolve({ data: null }),
   ])
 
   if (!orgRaw) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -41,6 +44,7 @@ export async function GET(
       estimate,
       items: (itemsRaw ?? []) as EstimateItem[],
       client,
+      clientSubunit: subunitRaw as ClientSubunit | null,
       org: orgRaw as Organization,
     }) as any,
   )

@@ -17,7 +17,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
 
   const orgId = userRecord.organization_id
 
-  const [{ data: estimateRaw }, { data: itemsRaw }, { data: clientsRaw }, { data: org }, { data: productsRaw }] =
+  const [{ data: estimateRaw }, { data: itemsRaw }, { data: clientsRaw }, { data: org }, { data: productsRaw }, { data: subunitsRaw }] =
     await Promise.all([
       supabase
         .from('estimates')
@@ -51,6 +51,12 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
         .eq('is_active', true)
         .is('deleted_at', null)
         .order('name'),
+      supabase
+        .from('client_subunits')
+        .select('id, client_id, name')
+        .eq('organization_id', orgId)
+        .is('deleted_at', null)
+        .order('name'),
     ])
 
   if (!estimateRaw) notFound()
@@ -63,6 +69,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
     id: p.id, name: p.name, description: p.description,
     unit_price: p.unit_price, currency: p.currency,
   }))
+  const subunits = (subunitsRaw ?? []) as { id: string; client_id: string; name: string }[]
 
   return (
     <div className="mx-auto max-w-4xl p-6">
@@ -73,10 +80,12 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
       <EstimateEditor
         estimateId={id}
         clients={clients}
+        subunits={subunits}
         defaultCurrency={org?.default_currency ?? estimate.currency}
         products={products}
         defaultValues={{
-          client_id:       estimate.client_id,
+          client_id:         estimate.client_id,
+          client_subunit_id: estimate.client_subunit_id ?? '',
           estimate_number: estimate.estimate_number,
           issue_date:      estimate.issue_date,
           expiry_date:     estimate.expiry_date ?? '',

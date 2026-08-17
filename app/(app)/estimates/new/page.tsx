@@ -15,7 +15,7 @@ export default async function NewEstimatePage() {
 
   const orgId = userRecord.organization_id
 
-  const [{ data: clientsRaw }, { data: org }, { data: nextNum }, { data: productsRaw }] = await Promise.all([
+  const [{ data: clientsRaw }, { data: org }, { data: nextNum }, { data: productsRaw }, { data: subunitsRaw }] = await Promise.all([
     supabase
       .from('clients')
       .select('*')
@@ -36,6 +36,12 @@ export default async function NewEstimatePage() {
       .eq('is_active', true)
       .is('deleted_at', null)
       .order('name'),
+    supabase
+      .from('client_subunits')
+      .select('id, client_id, name')
+      .eq('organization_id', orgId)
+      .is('deleted_at', null)
+      .order('name'),
   ])
 
   const clients  = (clientsRaw  ?? []).map(c => ({ id: c.id, name: c.name }))
@@ -43,6 +49,7 @@ export default async function NewEstimatePage() {
     id: p.id, name: p.name, description: p.description,
     unit_price: p.unit_price, currency: p.currency,
   }))
+  const subunits = (subunitsRaw ?? []) as { id: string; client_id: string; name: string }[]
 
   return (
     <div className="mx-auto max-w-4xl p-6">
@@ -54,6 +61,7 @@ export default async function NewEstimatePage() {
       </div>
       <EstimateEditor
         clients={clients}
+        subunits={subunits}
         defaultCurrency={org?.default_currency ?? 'USD'}
         nextEstimateNumber={nextNum ?? 'EST-2024-0001'}
         products={products}

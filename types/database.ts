@@ -423,6 +423,7 @@ export interface Estimate {
   share_token: string | null;
   converted_invoice_id: string | null;
   converted_proforma_id: string | null;
+  client_subunit_id: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

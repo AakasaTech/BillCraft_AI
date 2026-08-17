@@ -97,15 +97,17 @@ export function InvoiceEditor({
   const watchedTaxRate  = useWatch({ control: form.control, name: 'tax_rate' })
   const watchedCurrency = useWatch({ control: form.control, name: 'currency' })
   const watchedClientId = useWatch({ control: form.control, name: 'client_id' })
+  const watchedLocalTransport = useWatch({ control: form.control, name: 'local_transport_amount' })
 
   const clientSubunits = subunits.filter(s => s.client_id === watchedClientId)
 
   const safe = (n: number) => Number.isFinite(n) ? n : 0
-  const subtotal  = (watchedItems ?? []).reduce((s, i) => s + safe(i.quantity * i.unit_price), 0)
-  const discount  = Math.min(safe(watchedDiscount ?? 0), subtotal)
-  const taxBase   = subtotal - discount
-  const taxAmount = safe((watchedTaxRate ?? 0) > 0 ? taxBase * ((watchedTaxRate ?? 0) / 100) : 0)
-  const total     = taxBase + taxAmount
+  const subtotal       = (watchedItems ?? []).reduce((s, i) => s + safe(i.quantity * i.unit_price), 0)
+  const discount       = Math.min(safe(watchedDiscount ?? 0), subtotal)
+  const taxBase        = subtotal - discount
+  const taxAmount      = safe((watchedTaxRate ?? 0) > 0 ? taxBase * ((watchedTaxRate ?? 0) / 100) : 0)
+  const localTransport = safe(watchedLocalTransport ?? 0)
+  const total           = taxBase + taxAmount + localTransport
   const cur       = watchedCurrency ?? defaultCurrency
 
   // ── AI extraction ───────────────────────────────────────────────────────────
@@ -247,6 +249,28 @@ export function InvoiceEditor({
             )}
           </div>
 
+          {isTrading && clientSubunits.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Sub unit</Label>
+              <Controller
+                control={form.control}
+                name="client_subunit_id"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Client default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientSubunits.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="invoice_number">Invoice number *</Label>
             <Input
@@ -289,28 +313,7 @@ export function InvoiceEditor({
 
         {/* Trading-category fields */}
         {isTrading && (
-          <div className="grid gap-4 sm:grid-cols-3">
-            {clientSubunits.length > 0 && (
-              <div className="space-y-1.5">
-                <Label>Ship to / sub-unit</Label>
-                <Controller
-                  control={form.control}
-                  name="client_subunit_id"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Client default" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientSubunits.map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            )}
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Shipping terms</Label>
               <Controller
@@ -485,6 +488,12 @@ export function InvoiceEditor({
             </div>
             <span>{formatCurrency(taxAmount, cur)}</span>
           </div>
+          {localTransport > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Local transport</span>
+              <span>{formatCurrency(localTransport, cur)}</span>
+            </div>
+          )}
           <Separator />
           <div className="flex justify-between font-semibold text-base">
             <span>Total</span>

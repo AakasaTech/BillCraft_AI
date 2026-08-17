@@ -183,6 +183,14 @@ export function InvoicePDF({ invoice, items, client, clientSubunit, org }: Invoi
             <Text style={[s.tdText, s.colAmt]}>{fmt(item.total, cur)}</Text>
           </View>
         ))}
+        {invoice.local_transport_amount > 0 && (
+          <View style={s.tableRow} wrap={false}>
+            <Text style={[s.tdText, s.colDesc]}>Local Transport</Text>
+            <Text style={[s.tdText, s.colQty]}>1</Text>
+            <Text style={[s.tdText, s.colPrice]}>{fmt(invoice.local_transport_amount, cur)}</Text>
+            <Text style={[s.tdText, s.colAmt]}>{fmt(invoice.local_transport_amount, cur)}</Text>
+          </View>
+        )}
 
         {/* ── Totals ──────────────────────────────────────────── */}
         <View style={s.totalsBlock}>

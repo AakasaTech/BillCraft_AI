@@ -18,16 +18,17 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import type { Estimate, EstimateItem, Client, Organization, EstimateStatus } from '@/types/database'
+import type { Estimate, EstimateItem, Client, ClientSubunit, Organization, EstimateStatus } from '@/types/database'
 
 interface EstimateDetailViewProps {
-  estimate: Estimate
-  items:    EstimateItem[]
-  client:   Client
-  org:      Organization
+  estimate:      Estimate
+  items:         EstimateItem[]
+  client:        Client
+  clientSubunit: ClientSubunit | null
+  org:           Organization
 }
 
-export function EstimateDetailView({ estimate, items, client, org }: EstimateDetailViewProps) {
+export function EstimateDetailView({ estimate, items, client, clientSubunit, org }: EstimateDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const status = estimate.status as EstimateStatus
@@ -183,11 +184,14 @@ export function EstimateDetailView({ estimate, items, client, org }: EstimateDet
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Prepared for</p>
             <p className="font-semibold">{client.name}</p>
-            {client.email         && <p className="text-sm text-muted-foreground">{client.email}</p>}
-            {client.address_line1 && <p className="text-sm text-muted-foreground">{client.address_line1}</p>}
-            {(client.city || client.country_code) && (
+            {clientSubunit?.name && <p className="text-sm text-muted-foreground">Attn: {clientSubunit.name}</p>}
+            {client.email        && <p className="text-sm text-muted-foreground">{client.email}</p>}
+            {(clientSubunit?.address_line1 ?? client.address_line1) && (
+              <p className="text-sm text-muted-foreground">{clientSubunit?.address_line1 ?? client.address_line1}</p>
+            )}
+            {((clientSubunit?.city ?? client.city) || (clientSubunit?.country_code ?? client.country_code)) && (
               <p className="text-sm text-muted-foreground">
-                {[client.city, client.country_code].filter(Boolean).join(', ')}
+                {[clientSubunit?.city ?? client.city, clientSubunit?.country_code ?? client.country_code].filter(Boolean).join(', ')}
               </p>
             )}
           </div>

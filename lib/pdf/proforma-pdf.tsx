@@ -178,6 +178,14 @@ export function ProformaPDF({ proforma, items, client, clientSubunit, org }: Pro
             <Text style={[s.tdText, s.colAmt]}>{fmt(item.total, cur)}</Text>
           </View>
         ))}
+        {proforma.local_transport_amount > 0 && (
+          <View style={s.tableRow} wrap={false}>
+            <Text style={[s.tdText, s.colDesc]}>Local Transport</Text>
+            <Text style={[s.tdText, s.colQty]}>1</Text>
+            <Text style={[s.tdText, s.colPrice]}>{fmt(proforma.local_transport_amount, cur)}</Text>
+            <Text style={[s.tdText, s.colAmt]}>{fmt(proforma.local_transport_amount, cur)}</Text>
+          </View>
+        )}
 
         {/* Totals */}
         <View style={s.totalsBlock}>
@@ -195,12 +203,6 @@ export function ProformaPDF({ proforma, items, client, clientSubunit, org }: Pro
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Tax ({proforma.tax_rate}%)</Text>
               <Text style={s.totalVal}>{fmt(tax, cur)}</Text>
-            </View>
-          )}
-          {proforma.local_transport_amount > 0 && (
-            <View style={s.totalRow}>
-              <Text style={s.totalLabel}>Local transport</Text>
-              <Text style={s.totalVal}>{fmt(proforma.local_transport_amount, cur)}</Text>
             </View>
           )}
           <View style={s.divider} />

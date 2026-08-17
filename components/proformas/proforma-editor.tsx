@@ -123,6 +123,28 @@ export function ProformaEditor({
             )}
           </div>
 
+          {clientSubunits.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Sub unit</Label>
+              <Controller
+                control={form.control}
+                name="client_subunit_id"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Client default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientSubunits.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="proforma_number">Proforma number <span className="text-destructive">*</span></Label>
             <Input id="proforma_number" {...form.register('proforma_number')} />
@@ -152,28 +174,6 @@ export function ProformaEditor({
               </SelectContent>
             </Select>
           </div>
-
-          {clientSubunits.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Ship to / sub-unit</Label>
-              <Controller
-                control={form.control}
-                name="client_subunit_id"
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Client default" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientSubunits.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          )}
         </div>
       </div>
 
