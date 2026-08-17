@@ -19,6 +19,7 @@ export const estimateFormSchema = z.object({
   discount_amount: z.number().min(0).default(0),
   notes:           z.string().max(2000).optional().or(z.literal('')),
   terms:           z.string().max(2000).optional().or(z.literal('')),
+  is_simplified:   z.boolean().default(false),
   items:           z.array(itemSchema).min(1),
 })
 

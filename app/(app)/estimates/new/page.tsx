@@ -65,6 +65,7 @@ export default async function NewEstimatePage() {
         defaultCurrency={org?.default_currency ?? 'USD'}
         nextEstimateNumber={nextNum ?? 'EST-2024-0001'}
         products={products}
+        isTrading={org?.category === 'trading'}
       />
     </div>
   )

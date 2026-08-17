@@ -84,6 +84,7 @@ export async function createProformaAction(data: ProformaFormData): Promise<Acti
       local_transport_amount:  d.local_transport_amount,
       notes:                   d.notes || null,
       terms:                   d.terms || null,
+      is_simplified:           d.is_simplified ?? false,
     })
     .select('id')
     .single()
@@ -144,6 +145,7 @@ export async function updateProformaAction(id: string, data: ProformaFormData): 
       local_transport_amount:  d.local_transport_amount,
       notes:                   d.notes || null,
       terms:                   d.terms || null,
+      is_simplified:           d.is_simplified ?? false,
     })
     .eq('id', id)
     .eq('organization_id', ctx.orgId)
@@ -333,6 +335,7 @@ export async function convertEstimateToProformaAction(
       // which drops terms), terms IS copied here — proformas carry shipping/
       // payment terms language forward instead of re-deriving it downstream.
       terms:           estimate.terms,
+      is_simplified:   estimate.is_simplified,
     })
     .select('id')
     .single()
@@ -436,6 +439,7 @@ export async function convertProformaToInvoiceAction(
       total:                   proforma.total,
       amount_paid:             0,
       notes:                   proforma.notes,
+      is_simplified:           proforma.is_simplified,
       // Trading fields carried over from the proforma.
       shipping_terms:          proforma.shipping_terms,
       local_transport_amount:  proforma.local_transport_amount,

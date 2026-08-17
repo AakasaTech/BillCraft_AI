@@ -199,7 +199,7 @@ export function ProformaPDF({ proforma, items, client, clientSubunit, org }: Pro
               <Text style={s.totalVal}>−{fmt(discount, cur)}</Text>
             </View>
           )}
-          {tax > 0 && (
+          {tax > 0 && !proforma.is_simplified && (
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Tax ({proforma.tax_rate}%)</Text>
               <Text style={s.totalVal}>{fmt(tax, cur)}</Text>
@@ -211,6 +211,11 @@ export function ProformaPDF({ proforma, items, client, clientSubunit, org }: Pro
             <Text style={s.grandVal}>{fmt(total, cur)}</Text>
           </View>
         </View>
+        {proforma.is_simplified && (
+          <Text style={{ marginTop: 4, fontSize: 8, color: c.muted, textAlign: 'right' }}>
+            All amounts include applicable tax
+          </Text>
+        )}
 
         {/* Notes + Terms */}
         {(proforma.notes || proforma.terms) && (

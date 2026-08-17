@@ -424,6 +424,7 @@ export interface Estimate {
   converted_invoice_id: string | null;
   converted_proforma_id: string | null;
   client_subunit_id: string | null;
+  is_simplified: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -461,6 +462,7 @@ export interface Proforma {
   shipping_terms: string | null;
   local_transport_amount: number;
   client_subunit_id: string | null;
+  is_simplified: boolean;
   notes: string | null;
   terms: string | null;
   sent_at: string | null;

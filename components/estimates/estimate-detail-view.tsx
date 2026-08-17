@@ -243,7 +243,7 @@ export function EstimateDetailView({ estimate, items, client, clientSubunit, org
               <span>−{formatCurrency(estimate.discount_amount, estimate.currency)}</span>
             </div>
           )}
-          {estimate.tax_amount > 0 && (
+          {estimate.tax_amount > 0 && !estimate.is_simplified && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tax ({estimate.tax_rate}%)</span>
               <span>{formatCurrency(estimate.tax_amount, estimate.currency)}</span>
@@ -254,6 +254,9 @@ export function EstimateDetailView({ estimate, items, client, clientSubunit, org
             <span>Total</span>
             <span className="text-amber-600">{formatCurrency(estimate.total, estimate.currency)}</span>
           </div>
+          {estimate.is_simplified && (
+            <p className="text-right text-xs text-muted-foreground">All amounts include applicable tax</p>
+          )}
         </div>
 
         {(estimate.notes || estimate.terms) && (

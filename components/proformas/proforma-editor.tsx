@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -63,6 +64,7 @@ export function ProformaEditor({
       local_transport_amount: defaultValues?.local_transport_amount ?? 0,
       notes:                   defaultValues?.notes                  ?? '',
       terms:                   defaultValues?.terms                  ?? '',
+      is_simplified:           defaultValues?.is_simplified           ?? false,
       items: defaultValues?.items?.length
         ? defaultValues.items
         : [{ description: '', quantity: 1, unit_price: 0, hs_code: '', country_of_origin: '', sort_order: 0 }],
@@ -340,6 +342,22 @@ export function ProformaEditor({
           <div className="flex justify-between font-bold">
             <span>Total</span><span>{formatCurrency(total, watchedCurrency)}</span>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+          <div>
+            <p className="text-sm font-medium">Simplified proforma (tax included, not itemized)</p>
+            <p className="text-xs text-muted-foreground">
+              Hides the tax line on the PDF and shows a note that amounts include tax. Doesn't change the total.
+            </p>
+          </div>
+          <Controller
+            control={form.control}
+            name="is_simplified"
+            render={({ field }) => (
+              <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+            )}
+          />
         </div>
       </div>
 

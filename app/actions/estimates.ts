@@ -66,6 +66,7 @@ export async function createEstimateAction(data: EstimateFormData): Promise<Acti
       total,
       notes:           d.notes || null,
       terms:           d.terms || null,
+      is_simplified:   d.is_simplified ?? false,
     })
     .select('id')
     .single()
@@ -120,6 +121,7 @@ export async function updateEstimateAction(id: string, data: EstimateFormData): 
       total,
       notes:           d.notes || null,
       terms:           d.terms || null,
+      is_simplified:   d.is_simplified ?? false,
     })
     .eq('id', id)
     .eq('organization_id', ctx.orgId)
@@ -377,6 +379,7 @@ export async function convertToInvoiceAction(id: string): Promise<{ error?: stri
       total:            estimate.total,
       amount_paid:      0,
       notes:            estimate.notes,
+      is_simplified:    estimate.is_simplified,
     })
     .select('id')
     .single()

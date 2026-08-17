@@ -179,7 +179,7 @@ export function EstimatePDF({ estimate, items, client, clientSubunit, org }: Est
               <Text style={s.totalVal}>−{fmt(discount, cur)}</Text>
             </View>
           )}
-          {tax > 0 && (
+          {tax > 0 && !estimate.is_simplified && (
             <View style={s.totalRow}>
               <Text style={s.totalLabel}>Tax ({estimate.tax_rate}%)</Text>
               <Text style={s.totalVal}>{fmt(tax, cur)}</Text>
@@ -191,6 +191,11 @@ export function EstimatePDF({ estimate, items, client, clientSubunit, org }: Est
             <Text style={s.grandVal}>{fmt(total, cur)}</Text>
           </View>
         </View>
+        {estimate.is_simplified && (
+          <Text style={{ marginTop: 4, fontSize: 8, color: c.muted, textAlign: 'right' }}>
+            All amounts include applicable tax
+          </Text>
+        )}
 
         {/* Notes + Terms */}
         {(estimate.notes || estimate.terms) && (

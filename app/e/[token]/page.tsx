@@ -217,7 +217,7 @@ export default async function PublicEstimatePage({
                 <span>−{formatCurrency(estimate.discount_amount, estimate.currency)}</span>
               </div>
             )}
-            {estimate.tax_amount > 0 && (
+            {estimate.tax_amount > 0 && !estimate.is_simplified && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tax ({estimate.tax_rate}%)</span>
                 <span>{formatCurrency(estimate.tax_amount, estimate.currency)}</span>
@@ -228,6 +228,9 @@ export default async function PublicEstimatePage({
               <span>Total</span>
               <span>{formatCurrency(estimate.total, estimate.currency)}</span>
             </div>
+            {estimate.is_simplified && (
+              <p className="text-right text-xs text-muted-foreground">All amounts include applicable tax</p>
+            )}
           </div>
 
           {/* Notes + Terms */}

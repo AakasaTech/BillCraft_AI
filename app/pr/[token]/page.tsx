@@ -231,7 +231,7 @@ export default async function PublicProformaPage({
                 <span>−{formatCurrency(proforma.discount_amount, proforma.currency)}</span>
               </div>
             )}
-            {proforma.tax_amount > 0 && (
+            {proforma.tax_amount > 0 && !proforma.is_simplified && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tax ({proforma.tax_rate}%)</span>
                 <span>{formatCurrency(proforma.tax_amount, proforma.currency)}</span>
@@ -242,6 +242,9 @@ export default async function PublicProformaPage({
               <span>Total</span>
               <span>{formatCurrency(proforma.total, proforma.currency)}</span>
             </div>
+            {proforma.is_simplified && (
+              <p className="text-right text-xs text-muted-foreground">All amounts include applicable tax</p>
+            )}
           </div>
 
           {/* Notes + Terms */}

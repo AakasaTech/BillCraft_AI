@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -35,10 +36,12 @@ interface EstimateEditorProps {
   products?:      ProductOption[]
   defaultValues?: Partial<EstimateFormData>
   nextEstimateNumber?: string
+  isTrading?:     boolean
 }
 
 export function EstimateEditor({
   estimateId, defaultCurrency, clients, subunits = [], products = [], defaultValues, nextEstimateNumber,
+  isTrading = false,
 }: EstimateEditorProps) {
   const router = useRouter()
   const isEdit = !!estimateId
@@ -60,6 +63,7 @@ export function EstimateEditor({
       discount_amount: defaultValues?.discount_amount  ?? 0,
       notes:           defaultValues?.notes            ?? '',
       terms:           defaultValues?.terms            ?? '',
+      is_simplified:   defaultValues?.is_simplified     ?? false,
       items: defaultValues?.items?.length
         ? defaultValues.items
         : [{ description: '', quantity: 1, unit_price: 0, sort_order: 0 }],
@@ -289,6 +293,24 @@ export function EstimateEditor({
             <span>Total</span><span>{formatCurrency(total, watchedCurrency)}</span>
           </div>
         </div>
+
+        {isTrading && (
+          <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+            <div>
+              <p className="text-sm font-medium">Simplified estimate (tax included, not itemized)</p>
+              <p className="text-xs text-muted-foreground">
+                Hides the tax line on the PDF and shows a note that amounts include tax. Doesn't change the total.
+              </p>
+            </div>
+            <Controller
+              control={form.control}
+              name="is_simplified"
+              render={({ field }) => (
+                <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
+        )}
       </div>
 
       {/* Tax & discount */}

@@ -95,6 +95,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
           discount_amount: estimate.discount_amount,
           notes:           estimate.notes ?? '',
           terms:           estimate.terms ?? '',
+          is_simplified:   estimate.is_simplified,
           items: items.map(i => ({
             description: i.description,
             quantity:    i.quantity,
@@ -102,6 +103,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
             sort_order:  i.sort_order,
           })),
         }}
+        isTrading={org?.category === 'trading'}
       />
     </div>
   )
