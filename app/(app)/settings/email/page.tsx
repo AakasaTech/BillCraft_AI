@@ -10,6 +10,7 @@ export interface ConnectionRow {
   provider:        EmailConnectionProvider
   status:          EmailConnectionStatus
   connected_email: string | null
+  from_email:      string | null
   last_error:      string | null
 }
 
@@ -29,7 +30,7 @@ export default async function EmailConnectionsPage() {
     // Only non-secret columns — client_secret/refresh_token/access_token never leave the server.
     supabase
       .from('org_email_connections')
-      .select('provider, status, connected_email, last_error')
+      .select('provider, status, connected_email, from_email, last_error')
       .eq('organization_id', orgId),
   ])
 

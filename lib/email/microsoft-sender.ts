@@ -4,7 +4,7 @@
 // this module only knows how to build the Graph payload and POST it.
 
 export interface GraphSendOptions {
-  from:         string // the connected mailbox — informational only, Graph always sends as the token's owner
+  from:         string // sender address; only takes effect if the token's owner has Send As/Send on Behalf delegate permission on this mailbox — otherwise Graph rejects with ErrorSendAsDenied
   to:           string
   cc?:          string[]
   subject:      string
@@ -20,6 +20,7 @@ export async function sendGraphMail(
   const message = {
     subject: opts.subject,
     body: { contentType: 'HTML', content: opts.html },
+    from: { emailAddress: { address: opts.from } },
     toRecipients: [{ emailAddress: { address: opts.to } }],
     ccRecipients: (opts.cc ?? []).map(addr => ({ emailAddress: { address: addr } })),
     attachments: (opts.attachments ?? []).map(att => ({

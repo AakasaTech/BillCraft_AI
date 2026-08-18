@@ -40,6 +40,10 @@ export const emailPrefixSchema = z.object({
     .or(z.literal('')),
 })
 
+export const connectionFromEmailSchema = z.object({
+  fromEmail: z.string().email('Enter a valid email address').or(z.literal('')),
+})
+
 export const changePasswordSchema = z.object({
   new_password:     z.string().min(8, 'Password must be at least 8 characters'),
   confirm_password: z.string().min(8),

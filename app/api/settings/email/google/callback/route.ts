@@ -5,11 +5,19 @@ import { exchangeGoogleCode, fetchGoogleEmail } from '@/lib/email/google-oauth'
 
 export const dynamic = 'force-dynamic'
 
-// Built relative to the incoming request URL rather than NEXT_PUBLIC_APP_URL —
-// req.url is always a valid absolute URL, so this can never throw even if that
-// env var is missing or malformed (unlike new URL(path, envVar), which does).
+// Prefer NEXT_PUBLIC_APP_URL — it's the same value googleRedirectUri() uses to
+// build the redirect_uri Google just accepted, so if we got here it's already
+// known-good. req.url is only a fallback: behind a reverse proxy that doesn't
+// forward the original Host header, req.url can resolve to the container's
+// internal bind address (e.g. 0.0.0.0:3000) instead of the public domain.
 function redirectTo(req: NextRequest, status: 'connected' | 'error', message?: string) {
-  const url = new URL('/settings/email', req.url)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  let url: URL
+  try {
+    url = new URL('/settings/email', appUrl || req.url)
+  } catch {
+    url = new URL('/settings/email', req.url)
+  }
   url.searchParams.set('provider', 'google')
   url.searchParams.set('status', status)
   if (message) url.searchParams.set('message', message)

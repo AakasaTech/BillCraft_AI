@@ -55,7 +55,7 @@ export async function trySendViaOrgConnection(
   const conn = await getActiveConnection(orgId, supabase)
   if (!conn) return null
 
-  const from = conn.connected_email ?? 'unknown'
+  const from = conn.from_email || conn.connected_email || 'unknown'
 
   // Anything here (most importantly decrypt(), which throws if ENCRYPTION_KEY
   // is missing/misconfigured) must not propagate — this is called from every

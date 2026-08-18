@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { encrypt } from '@/lib/crypto'
 import { buildGoogleAuthorizeUrl } from '@/lib/email/google-oauth'
 import { buildMicrosoftAuthorizeUrl } from '@/lib/email/microsoft-oauth'
+import { connectionFromEmailSchema } from '@/lib/validations/settings'
 import type { EmailConnectionProvider } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
@@ -73,6 +74,42 @@ export async function saveEmailProviderCredentialsAction(
     console.error('[saveEmailProviderCredentialsAction]', message)
     return { error: `Could not save this connection: ${message}` }
   }
+}
+
+// Overrides the "From" address used when sending through this connection.
+// Only takes effect on the provider side if the connected mailbox is actually
+// allowed to send as that address (a verified Gmail "Send mail as" alias, or
+// a Microsoft mailbox with delegated "Send As" permission) — this action just
+// records the org's intent, it can't verify provider-side permissions itself.
+export async function setConnectionFromEmailAction(
+  provider: EmailConnectionProvider,
+  fromEmail: string,
+): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Only owners and admins can manage email connections.' }
+
+  const parsed = connectionFromEmailSchema.safeParse({ fromEmail: fromEmail.trim() })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid email address.' }
+
+  const { data: conn } = await ctx.supabase
+    .from('org_email_connections')
+    .select('status')
+    .eq('organization_id', ctx.orgId)
+    .eq('provider', provider)
+    .maybeSingle()
+
+  if (conn?.status !== 'connected') return { error: 'Connect this provider before setting a From address.' }
+
+  const { error } = await ctx.supabase
+    .from('org_email_connections')
+    .update({ from_email: parsed.data.fromEmail || null })
+    .eq('organization_id', ctx.orgId)
+    .eq('provider', provider)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/settings/email')
+  return { success: true }
 }
 
 export async function disconnectEmailProviderAction(provider: EmailConnectionProvider): Promise<ActionResult> {

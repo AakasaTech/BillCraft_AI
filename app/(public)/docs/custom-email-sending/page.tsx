@@ -191,6 +191,32 @@ export default function CustomEmailSendingPage() {
         </p>
       </Step>
 
+      {/* Sending from a different address */}
+      <h2 className="mt-10 text-xl font-bold">Sending from a different address</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        By default, client-facing emails send as whichever mailbox completed the OAuth connection
+        above. If you&apos;d rather they show a different address — e.g. a shared{' '}
+        <code className="rounded bg-muted px-1 text-xs">billing@yourcompany.com</code> instead of a
+        personal mailbox — set it under <strong>Settings → Email sending → From address</strong> for
+        that provider. This only works if the connected mailbox is actually allowed to send as that
+        address:
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        <strong>Google Workspace:</strong> add the address as a verified <strong>&quot;Send mail
+        as&quot;</strong> alias under the connected account&apos;s Gmail settings (
+        <strong>Settings → Accounts → Send mail as</strong>). Google requires confirming ownership of
+        that address (or an admin-configured domain-wide alias) before it will accept sends from it.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        <strong>Microsoft 365 / Azure:</strong> grant the connected account <strong>&quot;Send
+        As&quot;</strong> (or &quot;Send on Behalf&quot;) delegate permission on that mailbox —
+        typically a shared mailbox — from the Exchange admin center. Without that permission, Graph
+        rejects the send with <code className="rounded bg-muted px-1 text-xs">ErrorSendAsDenied</code>.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Leave the From address field blank to always use the connected mailbox&apos;s own address.
+      </p>
+
       {/* Troubleshooting */}
       <h2 className="mt-10 text-xl font-bold">Troubleshooting</h2>
       <p className="mt-2 text-sm text-muted-foreground">
@@ -203,6 +229,12 @@ export default function CustomEmailSendingPage() {
         (Google) or Mail.Send permission with admin consent (Microsoft) was actually granted in step
         3 of the relevant setup above, then disconnect and reconnect from{' '}
         <strong>Settings → Email sending</strong>.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        <strong>Emails fail after setting a custom From address:</strong> the connected mailbox isn&apos;t
+        allowed to send as that address yet — see &quot;Sending from a different address&quot; above.
+        Clear the field to fall back to the connected mailbox&apos;s own address while you fix the
+        alias/delegation setup.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
         <strong>Disconnecting:</strong> you can remove the connection from{' '}

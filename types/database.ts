@@ -136,6 +136,7 @@ export interface OrgEmailConnection {
   client_secret: string; // encrypted at rest — never send to the client
   tenant_id: string | null;
   connected_email: string | null;
+  from_email: string | null; // optional override for the send-as address; null = use connected_email
   refresh_token: string | null; // encrypted at rest — never send to the client
   access_token: string | null;  // encrypted at rest — never send to the client
   access_token_expires_at: string | null;

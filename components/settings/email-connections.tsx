@@ -9,6 +9,7 @@ import {
   saveEmailProviderCredentialsAction,
   disconnectEmailProviderAction,
   setActiveSenderAction,
+  setConnectionFromEmailAction,
 } from '@/app/actions/email-connections'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -125,13 +126,13 @@ function ActiveSenderSelector({ activeProvider, defaultSenderAddress, google, mi
     { choice: 'default', label: 'BillCraft default', address: defaultSenderAddress, available: true },
     {
       choice: 'google', label: 'Google Workspace',
-      address: google?.connected_email ?? 'org_common_name@yourcompany.com',
+      address: google?.from_email || google?.connected_email || 'org_common_name@yourcompany.com',
       available: google?.status === 'connected',
       unavailableReason: 'Connect Google Workspace below to select it.',
     },
     {
       choice: 'microsoft', label: 'Microsoft 365 / Azure',
-      address: microsoft?.connected_email ?? 'org_common_name@yourcompany.com',
+      address: microsoft?.from_email || microsoft?.connected_email || 'org_common_name@yourcompany.com',
       available: microsoft?.status === 'connected',
       unavailableReason: 'Connect Microsoft 365 below to select it.',
     },
@@ -204,8 +205,25 @@ function ProviderCard({ provider, connection, isActive, canManage }: ProviderCar
   const [clientId,     setClientId]     = useState('')
   const [clientSecret, setClientSecret] = useState('')
   const [tenantId,     setTenantId]     = useState('')
+  const [fromEmail,    setFromEmail]    = useState(connection?.from_email ?? '')
+  const [isSavingFrom, startFromTransition] = useTransition()
 
   const isConnected = connection?.status === 'connected'
+
+  // Keep the input in sync when the server-fetched connection changes (e.g.
+  // after router.refresh()) — this component instance persists across that
+  // refresh, so without this the field would keep showing a stale value.
+  useEffect(() => {
+    setFromEmail(connection?.from_email ?? '')
+  }, [connection?.from_email])
+
+  const handleSaveFromEmail = () => {
+    startFromTransition(async () => {
+      const result = await setConnectionFromEmailAction(provider, fromEmail)
+      if (result?.error) toast.error(result.error)
+      else { toast.success('From address updated.'); router.refresh() }
+    })
+  }
 
   const handleConnect = () => {
     if (!clientId.trim() || !clientSecret.trim()) {
@@ -263,29 +281,60 @@ function ProviderCard({ provider, connection, isActive, canManage }: ProviderCar
           <Separator />
 
           {isConnected ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={isPending}>Disconnect</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Disconnect {PROVIDER_LABEL[provider]}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Client-facing emails will fall back to BillCraft&apos;s shared sender until you reconnect.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDisconnect}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Disconnect
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor={`${provider}-from-email`}>From address</Label>
+                <p className="text-xs text-muted-foreground">
+                  Defaults to the connected mailbox ({connection?.connected_email}). Override this only
+                  if that address is set up as {provider === 'google'
+                    ? 'a verified "Send mail as" alias in this Gmail account'
+                    : 'a shared mailbox this account has "Send As" permission on'} — otherwise{' '}
+                  {provider === 'google' ? 'Google' : 'Microsoft'} will reject the send.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    id={`${provider}-from-email`}
+                    value={fromEmail}
+                    onChange={e => setFromEmail(e.target.value)}
+                    placeholder={connection?.connected_email ?? 'name@yourcompany.com'}
+                    className="max-w-xs"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isSavingFrom || fromEmail.trim() === (connection?.from_email ?? '')}
+                    onClick={handleSaveFromEmail}
+                  >
+                    {isSavingFrom && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={isPending}>Disconnect</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Disconnect {PROVIDER_LABEL[provider]}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Client-facing emails will fall back to BillCraft&apos;s shared sender until you reconnect.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDisconnect}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Disconnect
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
