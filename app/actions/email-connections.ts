@@ -98,22 +98,29 @@ export async function disconnectEmailProviderAction(provider: EmailConnectionPro
   return { success: true }
 }
 
-export async function setActiveEmailProviderAction(provider: EmailConnectionProvider): Promise<ActionResult> {
+// The explicit 3-way choice for how client-facing documents send: BillCraft's
+// own xxxx@billcraft.aakasa.dev sender, or one of the org's connected
+// mailboxes. 'default' clears active_email_provider without touching the
+// underlying connection — the org can switch back to Google/Microsoft later
+// without reconnecting.
+export async function setActiveSenderAction(choice: 'default' | EmailConnectionProvider): Promise<ActionResult> {
   const ctx = await getCtx()
   if (!ctx) return { error: 'Only owners and admins can manage email connections.' }
 
-  const { data: conn } = await ctx.supabase
-    .from('org_email_connections')
-    .select('status')
-    .eq('organization_id', ctx.orgId)
-    .eq('provider', provider)
-    .maybeSingle()
+  if (choice !== 'default') {
+    const { data: conn } = await ctx.supabase
+      .from('org_email_connections')
+      .select('status')
+      .eq('organization_id', ctx.orgId)
+      .eq('provider', choice)
+      .maybeSingle()
 
-  if (conn?.status !== 'connected') return { error: 'Connect this provider before making it active.' }
+    if (conn?.status !== 'connected') return { error: 'Connect this provider before selecting it as the sender.' }
+  }
 
   const { error } = await ctx.supabase
     .from('organizations')
-    .update({ active_email_provider: provider })
+    .update({ active_email_provider: choice === 'default' ? null : choice })
     .eq('id', ctx.orgId)
 
   if (error) return { error: error.message }

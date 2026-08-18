@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { EmailConnections } from '@/components/settings/email-connections'
+import { resolveFromAddress } from '@/lib/email/mailer'
 import type { EmailConnectionProvider, EmailConnectionStatus } from '@/types/database'
 
 export const metadata = { title: 'Custom Email Sending — BillCraft AI' }
@@ -24,7 +25,7 @@ export default async function EmailConnectionsPage() {
   const orgId = userRecord.organization_id
 
   const [{ data: org }, { data: connectionsRaw }] = await Promise.all([
-    supabase.from('organizations').select('active_email_provider').eq('id', orgId).single(),
+    supabase.from('organizations').select('active_email_provider, email_prefix').eq('id', orgId).single(),
     // Only non-secret columns — client_secret/refresh_token/access_token never leave the server.
     supabase
       .from('org_email_connections')
@@ -36,6 +37,7 @@ export default async function EmailConnectionsPage() {
     <EmailConnections
       canManage={userRecord.role === 'owner' || userRecord.role === 'admin'}
       activeProvider={org?.active_email_provider ?? null}
+      defaultSenderAddress={resolveFromAddress(org?.email_prefix)}
       connections={(connectionsRaw ?? []) as ConnectionRow[]}
     />
   )

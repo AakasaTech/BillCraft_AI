@@ -8,7 +8,7 @@ import { CheckCircle2, ExternalLink, Loader2, Mail, XCircle } from 'lucide-react
 import {
   saveEmailProviderCredentialsAction,
   disconnectEmailProviderAction,
-  setActiveEmailProviderAction,
+  setActiveSenderAction,
 } from '@/app/actions/email-connections'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,10 +22,13 @@ import {
 import type { EmailConnectionProvider } from '@/types/database'
 import type { ConnectionRow } from '@/app/(app)/settings/email/page'
 
+type SenderChoice = 'default' | EmailConnectionProvider
+
 interface EmailConnectionsProps {
-  canManage:      boolean
-  activeProvider: EmailConnectionProvider | null
-  connections:    ConnectionRow[]
+  canManage:            boolean
+  activeProvider:       EmailConnectionProvider | null
+  defaultSenderAddress: string
+  connections:          ConnectionRow[]
 }
 
 const PROVIDER_LABEL: Record<EmailConnectionProvider, string> = {
@@ -33,7 +36,7 @@ const PROVIDER_LABEL: Record<EmailConnectionProvider, string> = {
   microsoft: 'Microsoft 365 / Azure',
 }
 
-export function EmailConnections({ canManage, activeProvider, connections }: EmailConnectionsProps) {
+export function EmailConnections({ canManage, activeProvider, defaultSenderAddress, connections }: EmailConnectionsProps) {
   const router = useRouter()
 
   // The OAuth callback redirects back here with ?provider=&status=&message= —
@@ -72,6 +75,14 @@ export function EmailConnections({ canManage, activeProvider, connections }: Ema
         <p className="text-sm text-muted-foreground">Only owners and admins can manage email connections.</p>
       )}
 
+      <ActiveSenderSelector
+        activeProvider={activeProvider}
+        defaultSenderAddress={defaultSenderAddress}
+        google={google}
+        microsoft={microsoft}
+        canManage={canManage}
+      />
+
       <ProviderCard
         provider="google"
         connection={google}
@@ -92,6 +103,91 @@ export function EmailConnections({ canManage, activeProvider, connections }: Ema
         </Link>
       </p>
     </div>
+  )
+}
+
+interface ActiveSenderSelectorProps {
+  activeProvider:       EmailConnectionProvider | null
+  defaultSenderAddress: string
+  google:               ConnectionRow | undefined
+  microsoft:            ConnectionRow | undefined
+  canManage:            boolean
+}
+
+function ActiveSenderSelector({ activeProvider, defaultSenderAddress, google, microsoft, canManage }: ActiveSenderSelectorProps) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [pendingChoice, setPendingChoice] = useState<SenderChoice | null>(null)
+
+  const current: SenderChoice = activeProvider ?? 'default'
+
+  const options: Array<{ choice: SenderChoice; label: string; address: string; available: boolean; unavailableReason?: string }> = [
+    { choice: 'default', label: 'BillCraft default', address: defaultSenderAddress, available: true },
+    {
+      choice: 'google', label: 'Google Workspace',
+      address: google?.connected_email ?? 'org_common_name@yourcompany.com',
+      available: google?.status === 'connected',
+      unavailableReason: 'Connect Google Workspace below to select it.',
+    },
+    {
+      choice: 'microsoft', label: 'Microsoft 365 / Azure',
+      address: microsoft?.connected_email ?? 'org_common_name@yourcompany.com',
+      available: microsoft?.status === 'connected',
+      unavailableReason: 'Connect Microsoft 365 below to select it.',
+    },
+  ]
+
+  const handleSelect = (choice: SenderChoice) => {
+    if (choice === current || isPending) return
+    setPendingChoice(choice)
+    startTransition(async () => {
+      const result = await setActiveSenderAction(choice)
+      if (result?.error) toast.error(result.error)
+      else { toast.success('Active sender updated.'); router.refresh() }
+      setPendingChoice(null)
+    })
+  }
+
+  return (
+    <section className="space-y-3 rounded-xl border bg-card p-6">
+      <div>
+        <p className="text-sm font-semibold">Active sender</p>
+        <p className="text-xs text-muted-foreground">
+          Choose which address client-facing emails (invoices, estimates, proformas, reminders) send from.
+        </p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {options.map(opt => {
+          const isSelected = current === opt.choice
+          const isBusy = isPending && pendingChoice === opt.choice
+          return (
+            <button
+              key={opt.choice}
+              type="button"
+              disabled={!canManage || !opt.available || isPending}
+              onClick={() => handleSelect(opt.choice)}
+              title={!opt.available ? opt.unavailableReason : undefined}
+              className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
+                isSelected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
+              } ${!opt.available ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              <span className="flex w-full items-center justify-between gap-2">
+                <span className="text-xs font-semibold">{opt.label}</span>
+                {isBusy ? (
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+                ) : isSelected ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                ) : null}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">{opt.address}</span>
+              {!opt.available && opt.choice !== 'default' && (
+                <span className="text-[11px] text-muted-foreground">Not connected</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -133,14 +229,6 @@ function ProviderCard({ provider, connection, isActive, canManage }: ProviderCar
     })
   }
 
-  const handleMakeActive = () => {
-    startTransition(async () => {
-      const result = await setActiveEmailProviderAction(provider)
-      if (result?.error) toast.error(result.error)
-      else { toast.success(`${PROVIDER_LABEL[provider]} is now the active sender.`); router.refresh() }
-    })
-  }
-
   return (
     <section className="space-y-4 rounded-xl border bg-card p-6">
       <div className="flex items-start justify-between gap-4">
@@ -176,12 +264,6 @@ function ProviderCard({ provider, connection, isActive, canManage }: ProviderCar
 
           {isConnected ? (
             <div className="flex flex-wrap items-center gap-2">
-              {!isActive && (
-                <Button size="sm" disabled={isPending} onClick={handleMakeActive}>
-                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Make active sender
-                </Button>
-              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" size="sm" disabled={isPending}>Disconnect</Button>
