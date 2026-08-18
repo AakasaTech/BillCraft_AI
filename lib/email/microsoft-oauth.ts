@@ -5,7 +5,9 @@
 const SCOPE = 'offline_access https://graph.microsoft.com/Mail.Send'
 
 export function microsoftRedirectUri(): string {
-  return `${process.env.NEXT_PUBLIC_APP_URL}/api/settings/email/microsoft/callback`
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL is not configured')
+  return `${appUrl}/api/settings/email/microsoft/callback`
 }
 
 function authority(tenantId: string | null): string {

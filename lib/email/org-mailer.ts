@@ -55,36 +55,48 @@ export async function trySendViaOrgConnection(
   const conn = await getActiveConnection(orgId, supabase)
   if (!conn) return null
 
-  const clientSecret = decrypt(conn.client_secret)
   const from = conn.connected_email ?? 'unknown'
 
-  if (conn.provider === 'google') {
-    if (!conn.refresh_token) return { error: 'Google connection is missing a refresh token — reconnect it in Settings.', from }
-    const result = await sendGmailMessage(
-      { clientId: conn.client_id, clientSecret, refreshToken: decrypt(conn.refresh_token) },
-      { from, ...opts },
-    )
-    return { ...result, from }
-  }
+  // Anything here (most importantly decrypt(), which throws if ENCRYPTION_KEY
+  // is missing/misconfigured) must not propagate — this is called from every
+  // client-facing send action, none of which expect trySendViaOrgConnection to
+  // throw. A misconfigured connection should degrade to a returned error, not
+  // crash the send.
+  try {
+    const clientSecret = decrypt(conn.client_secret)
 
-  // Microsoft — refresh tokens rotate on every use, so persist the new one.
-  if (!conn.refresh_token) return { error: 'Microsoft connection is missing a refresh token — reconnect it in Settings.', from }
-  const refreshed = await refreshMicrosoftToken(conn.client_id, clientSecret, conn.tenant_id, decrypt(conn.refresh_token))
-  if ('error' in refreshed) {
-    await supabase
+    if (conn.provider === 'google') {
+      if (!conn.refresh_token) return { error: 'Google connection is missing a refresh token — reconnect it in Settings.', from }
+      const result = await sendGmailMessage(
+        { clientId: conn.client_id, clientSecret, refreshToken: decrypt(conn.refresh_token) },
+        { from, ...opts },
+      )
+      return { ...result, from }
+    }
+
+    // Microsoft — refresh tokens rotate on every use, so persist the new one.
+    if (!conn.refresh_token) return { error: 'Microsoft connection is missing a refresh token — reconnect it in Settings.', from }
+    const refreshed = await refreshMicrosoftToken(conn.client_id, clientSecret, conn.tenant_id, decrypt(conn.refresh_token))
+    if ('error' in refreshed) {
+      await supabase
+        .from('org_email_connections')
+        .update({ status: 'error', last_error: refreshed.error })
+        .eq('id', conn.id)
+      return { error: refreshed.error, from }
+    }
+
+    void supabase
       .from('org_email_connections')
-      .update({ status: 'error', last_error: refreshed.error })
+      .update({ refresh_token: encrypt(refreshed.refreshToken) })
       .eq('id', conn.id)
-    return { error: refreshed.error, from }
+
+    const result = await sendGraphMail(refreshed.accessToken, { from, ...opts })
+    return { ...result, from }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    console.error('[trySendViaOrgConnection]', message)
+    return { error: message, from }
   }
-
-  void supabase
-    .from('org_email_connections')
-    .update({ refresh_token: encrypt(refreshed.refreshToken) })
-    .eq('id', conn.id)
-
-  const result = await sendGraphMail(refreshed.accessToken, { from, ...opts })
-  return { ...result, from }
 }
 
 /**
