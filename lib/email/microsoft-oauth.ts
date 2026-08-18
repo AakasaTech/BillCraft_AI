@@ -7,7 +7,10 @@ const SCOPE = 'offline_access https://graph.microsoft.com/Mail.Send'
 export function microsoftRedirectUri(): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
   if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL is not configured')
-  return `${appUrl}/api/settings/email/microsoft/callback`
+  // Strip a trailing slash — otherwise a value like "https://host/" produces
+  // ".../api/..." with a double slash that won't match anything registered
+  // in the Azure App Registration, failing with AADSTS50011 (redirect URI mismatch).
+  return `${appUrl.replace(/\/+$/, '')}/api/settings/email/microsoft/callback`
 }
 
 function authority(tenantId: string | null): string {

@@ -7,7 +7,10 @@ const SCOPE = 'https://www.googleapis.com/auth/gmail.send'
 export function googleRedirectUri(): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
   if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL is not configured')
-  return `${appUrl}/api/settings/email/google/callback`
+  // Strip a trailing slash — otherwise a value like "https://host/" produces
+  // ".../api/..." with a double slash that won't match anything registered
+  // in Google Cloud Console, failing with redirect_uri_mismatch.
+  return `${appUrl.replace(/\/+$/, '')}/api/settings/email/google/callback`
 }
 
 export function buildGoogleAuthorizeUrl(clientId: string, state: string): string {

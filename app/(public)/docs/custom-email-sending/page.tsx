@@ -38,7 +38,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   )
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://your-billcraft-domain.com'
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://your-billcraft-domain.com').replace(/\/+$/, '')
 const GOOGLE_REDIRECT_URI    = `${APP_URL}/api/settings/email/google/callback`
 const MICROSOFT_REDIRECT_URI = `${APP_URL}/api/settings/email/microsoft/callback`
 
