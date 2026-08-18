@@ -34,11 +34,6 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
 
   const orgId = userRecord.organization_id
 
-  const { data: prefixRow } = await supabase
-    .from('users').select('email_prefix').eq('id', user.id).single()
-  const fromEmail = resolveFromAddress(prefixRow?.email_prefix)
-  if (!fromEmail) return { error: 'Sender email is not configured.' }
-
   const [{ data: invoice }, { data: itemsRaw }, { data: org }, { data: emailTpl }] = await Promise.all([
     supabase
       .from('invoices').select('*, clients(*)').eq('id', id)
@@ -57,6 +52,9 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
 
   const inv    = invoice as Invoice & { clients: Client | null }
   const client = inv.clients
+
+  const fromEmail = resolveFromAddress((org as Organization).email_prefix)
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   if (!client?.email) return { error: 'Client has no email address. Add one in the client settings.' }
 

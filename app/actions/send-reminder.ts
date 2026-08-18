@@ -64,11 +64,6 @@ async function _sendReminderAction(id: string, aiDraftBody?: string): Promise<Ac
 
   const orgId = userRecord.organization_id
 
-  const { data: prefixRow } = await supabase
-    .from('users').select('email_prefix').eq('id', user.id).single()
-  const fromEmail = resolveFromAddress(prefixRow?.email_prefix)
-  if (!fromEmail) return { error: 'Sender email is not configured.' }
-
   const [{ data: invoice }, { data: itemsRaw }, { data: org }, { data: emailTpl }] = await Promise.all([
     supabase
       .from('invoices').select('*, clients(*)').eq('id', id)
@@ -87,6 +82,9 @@ async function _sendReminderAction(id: string, aiDraftBody?: string): Promise<Ac
 
   const inv    = invoice as Invoice & { clients: Client | null }
   const client = inv.clients
+
+  const fromEmail = resolveFromAddress((org as Organization).email_prefix)
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   if (!client?.email) return { error: 'Client has no email address. Add one in the client settings.' }
   if (!REMINDER_STATUSES.includes(inv.status)) return { error: 'Reminders can only be sent for sent, viewed, partial, or overdue invoices.' }

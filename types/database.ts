@@ -107,6 +107,7 @@ export interface Organization {
   website: string | null;
   invoice_prefix: string;
   invoice_number_format: string;
+  email_prefix: string | null;
   next_invoice_number: number;
   next_proforma_number: number;
   payment_instructions: OrgPaymentInstruction[];
@@ -155,7 +156,6 @@ export interface User {
   name: string;
   role: UserRole;
   auth_provider: AuthProvider;
-  email_prefix: string | null;
   avatar_url: string | null;
   is_active: boolean;
   is_invoice_approver: boolean;

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getPlanStatus } from '@/lib/subscription'
-import { isEmailConfigured, getEmailFrom } from '@/lib/email/mailer'
+import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildProformaEmail } from '@/lib/email/proforma-template'
 import { proformaFormSchema, type ProformaFormData } from '@/lib/validations/proformas'
@@ -495,8 +495,6 @@ export async function convertProformaToInvoiceAction(
 
 export async function sendProformaEmailAction(id: string): Promise<ActionResult> {
   if (!isEmailConfigured()) return { error: 'Email sending is not configured.' }
-  const fromEmail = getEmailFrom()
-  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const ctx = await getCtx()
   if (!ctx) return { error: 'Not authenticated' }
@@ -522,6 +520,9 @@ export async function sendProformaEmailAction(id: string): Promise<ActionResult>
   ])
 
   if (!proformaRaw || !org) return { error: 'Proforma not found' }
+
+  const fromEmail = resolveFromAddress((org as Organization).email_prefix)
+  if (!fromEmail) return { error: 'Sender email is not configured.' }
 
   const proforma = proformaRaw as Proforma & { clients: Client | null }
   const client   = proforma.clients

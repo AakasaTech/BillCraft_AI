@@ -75,34 +75,35 @@ export async function updateProfileAction(data: ProfileData): Promise<ActionResu
   return { success: true }
 }
 
-export async function updateEmailPrefixAction(raw: { email_prefix: string }): Promise<ActionResult> {
+export async function updateOrgEmailPrefixAction(raw: { email_prefix: string }): Promise<ActionResult> {
   const parsed = emailPrefixSchema.safeParse(raw)
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? 'Invalid input' }
 
   const ctx = await getCtx()
   if (!ctx) return { error: 'Not authenticated' }
+  if (ctx.role !== 'owner' && ctx.role !== 'admin') return { error: 'Only owners and admins can change the sender address.' }
 
   const prefix = parsed.data.email_prefix || null
 
   if (prefix) {
     const { data: existing } = await ctx.supabase
-      .from('users')
+      .from('organizations')
       .select('id')
       .eq('email_prefix', prefix)
-      .neq('id', ctx.userId)
+      .neq('id', ctx.orgId)
       .maybeSingle()
 
     if (existing) return { error: 'That sender address is already taken. Choose a different one.' }
   }
 
   const { error } = await ctx.supabase
-    .from('users')
+    .from('organizations')
     .update({ email_prefix: prefix })
-    .eq('id', ctx.userId)
+    .eq('id', ctx.orgId)
 
   if (error) return { error: error.message }
 
-  revalidatePath('/settings/profile')
+  revalidatePath('/settings/organization')
   return { success: true }
 }
 

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { Loader2, Mail } from 'lucide-react'
 import { emailPrefixSchema } from '@/lib/validations/settings'
-import { updateEmailPrefixAction } from '@/app/actions/settings'
+import { updateOrgEmailPrefixAction } from '@/app/actions/settings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,13 +14,14 @@ import { Separator } from '@/components/ui/separator'
 
 interface EmailSenderFormProps {
   emailPrefix: string | null
+  canEdit:     boolean
 }
 
 type FormData = { email_prefix: string }
 
 const EMAIL_DOMAIN = 'billcraft.aakasa.dev'
 
-export function EmailSenderForm({ emailPrefix }: EmailSenderFormProps) {
+export function EmailSenderForm({ emailPrefix, canEdit }: EmailSenderFormProps) {
   const [isPending, startTransition] = useTransition()
   const [currentPrefix, setCurrentPrefix] = useState(emailPrefix ?? '')
 
@@ -33,7 +34,7 @@ export function EmailSenderForm({ emailPrefix }: EmailSenderFormProps) {
 
   const onSubmit = (data: FormData) => {
     startTransition(async () => {
-      const result = await updateEmailPrefixAction(data)
+      const result = await updateOrgEmailPrefixAction(data)
       if (result?.error) {
         toast.error(result.error)
       } else {
@@ -52,7 +53,9 @@ export function EmailSenderForm({ emailPrefix }: EmailSenderFormProps) {
       <div>
         <p className="text-sm font-semibold">Sender Email Address</p>
         <p className="text-xs text-muted-foreground">
-          Invoices and reminders you send will come from this address.
+          Invoices, estimates, proformas, and reminders sent by anyone on your team come from this
+          address — unless you&apos;ve connected your own Google Workspace or Microsoft 365 mailbox
+          under Email sending, which takes priority over this.
         </p>
       </div>
       <Separator />
@@ -68,13 +71,14 @@ export function EmailSenderForm({ emailPrefix }: EmailSenderFormProps) {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
         <div className="space-y-1.5">
-          <Label htmlFor="email_prefix">Your sender prefix</Label>
+          <Label htmlFor="email_prefix">Organization sender prefix</Label>
           <div className="flex items-center gap-0">
             <Input
               id="email_prefix"
               className="rounded-r-none font-mono"
-              placeholder="yourname"
+              placeholder="yourbusiness"
               autoComplete="off"
+              disabled={!canEdit}
               aria-invalid={!!form.formState.errors.email_prefix}
               {...form.register('email_prefix')}
             />
@@ -96,12 +100,16 @@ export function EmailSenderForm({ emailPrefix }: EmailSenderFormProps) {
           )}
         </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" size="sm" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save sender address
-          </Button>
-        </div>
+        {canEdit ? (
+          <div className="flex justify-end">
+            <Button type="submit" size="sm" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save sender address
+            </Button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Only owners and admins can change this.</p>
+        )}
       </form>
     </section>
   )

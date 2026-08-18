@@ -58,15 +58,28 @@ export default function NotificationsAndEmailPage() {
       {/* Sender address */}
       <h2 className="mt-10 text-xl font-bold">Sender address</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        All emails are sent from an address at{' '}
-        <code className="rounded bg-muted px-1 text-xs">billcraft.aakasa.dev</code>. The prefix
-        of your sender address is configured by the platform administrator. If you receive
-        bounces or delivery issues, contact your administrator.
+        By default, every client-facing email — invoices, estimates, proformas, and reminders —
+        sends from an address at{' '}
+        <code className="rounded bg-muted px-1 text-xs">billcraft.aakasa.dev</code>. Owners and
+        admins can set the prefix (the part before the @) once for the whole organization under{' '}
+        <strong>Settings → Organization → Sender Email Address</strong> — every team member's
+        sends use the same address, so clients see one consistent identity for your business
+        regardless of who on your team hits send.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
         The email <em>display name</em> shown to clients is your business name from{' '}
-        <strong>Settings → Organisation</strong>. Clients see something like "Acme Studio
+        <strong>Settings → Organization</strong>. Clients see something like "Acme Studio
         &lt;invoices@billcraft.aakasa.dev&gt;".
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        If you'd rather send from your own domain entirely — your real business email address,
+        not a billcraft.aakasa.dev one — connect your Google Workspace or Microsoft 365 mailbox
+        instead. See{' '}
+        <Link href="/docs/custom-email-sending" className="text-[#1D8CFF] hover:underline">
+          Custom Email Sending
+        </Link>{' '}
+        for setup. When a custom mailbox is connected, it takes priority over the
+        billcraft.aakasa.dev address for client-facing documents.
       </p>
 
       {/* What gets sent */}
