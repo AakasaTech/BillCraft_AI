@@ -126,13 +126,13 @@ function ActiveSenderSelector({ activeProvider, defaultSenderAddress, google, mi
     { choice: 'default', label: 'BillCraft default', address: defaultSenderAddress, available: true },
     {
       choice: 'google', label: 'Google Workspace',
-      address: google?.from_email || google?.connected_email || 'org_common_name@yourcompany.com',
+      address: google?.from_email || google?.connected_email || 'name@yourcompany.com',
       available: google?.status === 'connected',
       unavailableReason: 'Connect Google Workspace below to select it.',
     },
     {
       choice: 'microsoft', label: 'Microsoft 365 / Azure',
-      address: microsoft?.from_email || microsoft?.connected_email || 'org_common_name@yourcompany.com',
+      address: microsoft?.from_email || microsoft?.connected_email || 'name@yourcompany.com',
       available: microsoft?.status === 'connected',
       unavailableReason: 'Connect Microsoft 365 below to select it.',
     },
