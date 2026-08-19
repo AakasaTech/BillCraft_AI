@@ -26,6 +26,10 @@ export function buildMicrosoftAuthorizeUrl(clientId: string, tenantId: string | 
     response_type: 'code',
     response_mode: 'query',
     scope:         SCOPE,
+    // Forces the account chooser instead of silently reusing whatever Microsoft
+    // account is already signed in in the browser — without it, orgs can end up
+    // connecting the wrong mailbox with no chance to pick.
+    prompt:        'select_account',
     state,
   })
   return `${authority(tenantId)}/oauth2/v2.0/authorize?${params.toString()}`

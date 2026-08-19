@@ -20,7 +20,12 @@ export function buildGoogleAuthorizeUrl(clientId: string, state: string): string
     response_type: 'code',
     scope:         SCOPE,
     access_type:   'offline',
-    prompt:        'consent', // forces a refresh_token on every connect, even if previously authorized
+    // 'consent' forces a refresh_token on every connect, even if previously authorized.
+    // 'select_account' forces the account chooser instead of silently reusing whatever
+    // Google account is already signed in in the browser (e.g. the one used to create
+    // the OAuth client in Cloud Console) — without it, orgs can end up connecting the
+    // wrong mailbox with no chance to pick.
+    prompt:        'select_account consent',
     state,
   })
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
