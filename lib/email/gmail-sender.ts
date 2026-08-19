@@ -59,6 +59,32 @@ function postJson(url: string, body: unknown, token: string): Promise<Record<str
   })
 }
 
+function getJson(url: string, token: string): Promise<Record<string, unknown>> {
+  const parsed = new URL(url)
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      parsed,
+      { method: 'GET', headers: { Authorization: `Bearer ${token}` } },
+      (res) => {
+        let raw = ''
+        res.on('data', (c) => { raw += c })
+        res.on('end', () => {
+          try { resolve(JSON.parse(raw)) }
+          catch { reject(new Error(`Gmail API parse error: ${raw.slice(0, 200)}`)) }
+        })
+      },
+    )
+    req.on('error', reject)
+    req.end()
+  })
+}
+
+// Pulls the bare address out of a "Name <addr@x.com>" or "addr@x.com" header value.
+function extractEmail(headerValue: string): string {
+  const match = headerValue.match(/<([^>]+)>/)
+  return (match?.[1] ?? headerValue).trim().toLowerCase()
+}
+
 // ── OAuth token ───────────────────────────────────────────────────────────────
 
 export interface GmailCredentials {
@@ -159,7 +185,7 @@ function buildMime(opts: GmailSendOptions): Buffer {
 export async function sendGmailMessage(
   creds: GmailCredentials,
   opts: GmailSendOptions,
-): Promise<{ id?: string; error?: string }> {
+): Promise<{ id?: string; error?: string; warning?: string }> {
   try {
     const token  = await getAccessToken(creds)
     const mime   = buildMime(opts)
@@ -174,7 +200,36 @@ export async function sendGmailMessage(
       const err = result.error as { message?: string } | string
       return { error: typeof err === 'string' ? err : (err.message ?? 'Gmail send failed') }
     }
-    return { id: typeof result.id === 'string' ? result.id : undefined }
+    const id = typeof result.id === 'string' ? result.id : undefined
+
+    // Gmail silently REWRITES the From header back to the account's own
+    // address (no error) when it isn't a verified "Send mail as" alias on
+    // this account — so a mismatched from can't be caught above. Read the
+    // sent message back and compare; best-effort only, never fails the send.
+    if (id) {
+      try {
+        const sent = await getJson(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From`,
+          token,
+        )
+        const headers = (sent.payload as { headers?: Array<{ name: string; value: string }> } | undefined)?.headers
+        const actualFromHeader = headers?.find(h => h.name === 'From')?.value
+        if (actualFromHeader) {
+          const actual    = extractEmail(actualFromHeader)
+          const requested = extractEmail(opts.from)
+          if (actual && requested && actual !== requested) {
+            return {
+              id,
+              warning: `Sent as ${actual} instead of ${requested} — Gmail ignores a custom From address until it's added as a verified "Send mail as" alias in that account's Gmail settings.`,
+            }
+          }
+        }
+      } catch {
+        // Verification is best-effort; the send itself already succeeded.
+      }
+    }
+
+    return { id }
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) }
   }

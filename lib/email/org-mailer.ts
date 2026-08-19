@@ -15,9 +15,10 @@ export interface OrgSendOptions {
 }
 
 export interface OrgSendResult {
-  id?:   string
-  error?: string
-  from:  string // the connected mailbox that actually sent this
+  id?:      string
+  error?:   string
+  warning?: string
+  from:     string // the connected mailbox that actually sent this
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +72,15 @@ export async function trySendViaOrgConnection(
         { clientId: conn.client_id, clientSecret, refreshToken: decrypt(conn.refresh_token) },
         { from, ...opts },
       )
+      // Persist the warning where it can be seen (this isn't a per-send inbox,
+      // so "surface it once, next to the connection" is the only place a user
+      // will reliably see it). Doesn't touch `status` — the send itself succeeded.
+      if (result.warning) {
+        void supabase
+          .from('org_email_connections')
+          .update({ last_error: result.warning })
+          .eq('id', conn.id)
+      }
       return { ...result, from }
     }
 

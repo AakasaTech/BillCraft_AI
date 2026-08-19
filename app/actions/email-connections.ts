@@ -100,9 +100,12 @@ export async function setConnectionFromEmailAction(
 
   if (conn?.status !== 'connected') return { error: 'Connect this provider before setting a From address.' }
 
+  // Clear any stale "Gmail ignored your From override" warning from a
+  // previous send — the next send attempt will re-populate it if it's still
+  // not fixed, but it shouldn't linger against an address the org just changed.
   const { error } = await ctx.supabase
     .from('org_email_connections')
-    .update({ from_email: parsed.data.fromEmail || null })
+    .update({ from_email: parsed.data.fromEmail || null, last_error: null })
     .eq('organization_id', ctx.orgId)
     .eq('provider', provider)
 

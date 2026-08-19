@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { CheckCircle2, ExternalLink, Loader2, Mail, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Mail, XCircle } from 'lucide-react'
 import {
   saveEmailProviderCredentialsAction,
   disconnectEmailProviderAction,
@@ -257,10 +257,18 @@ function ProviderCard({ provider, connection, isActive, canManage }: ProviderCar
           <div>
             <p className="text-sm font-semibold">{PROVIDER_LABEL[provider]}</p>
             {isConnected ? (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                Connected as {connection?.connected_email ?? 'unknown address'}
-              </p>
+              <>
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                  Connected as {connection?.connected_email ?? 'unknown address'}
+                </p>
+                {connection?.last_error && (
+                  <p className="mt-1 flex items-start gap-1.5 text-xs text-amber-600">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {connection.last_error}
+                  </p>
+                )}
+              </>
             ) : connection?.status === 'error' ? (
               <p className="flex items-center gap-1.5 text-xs text-destructive">
                 <XCircle className="h-3.5 w-3.5" />
