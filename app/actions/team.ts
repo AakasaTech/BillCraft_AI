@@ -218,7 +218,12 @@ export async function setInvoiceApproverAction(
     return { error: 'Member not found.' }
   }
 
-  const { error } = await supabase
+  // The users table's UPDATE RLS only permits editing your own row
+  // (users_update_own USING id = auth.uid()), so an owner/admin designating
+  // another member as an approver must write through the service client.
+  // Authorization is enforced above (role + same-org check) before RLS is bypassed.
+  const serviceClient = createServiceClient()
+  const { error } = await serviceClient
     .from('users')
     .update({ is_invoice_approver: isApprover })
     .eq('id', targetUserId)

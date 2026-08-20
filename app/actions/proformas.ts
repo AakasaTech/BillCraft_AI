@@ -623,6 +623,46 @@ export async function submitProformaForApprovalAction(id: string): Promise<Actio
     return { error: 'Approval workflow is not available.' }
   }
 
+  // Auto-approve if the submitter is the only approver in the org.
+  const { count: approverCount } = await ctx.supabase
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('organization_id', ctx.orgId)
+    .eq('is_invoice_approver', true)
+    .is('deleted_at', null)
+
+  const isSoleApprover = (approverCount ?? 0) === 1
+
+  if (isSoleApprover) {
+    // Auto-approve: set to draft with approved_by/approved_at so it can be sent immediately.
+    const { error } = await ctx.supabase
+      .from('proformas')
+      .update({
+        status:                    'draft',
+        submitted_for_approval_at: new Date().toISOString(),
+        approved_by:                ctx.userId,
+        approved_at:                new Date().toISOString(),
+        rejected_by:                null,
+        rejected_at:                null,
+        rejection_note:             null,
+      })
+      .eq('id', id)
+      .eq('organization_id', ctx.orgId)
+      .eq('status', 'draft')
+
+    if (error) return { error: 'Only draft proformas can be submitted for approval.' }
+
+    logAudit(ctx.supabase, {
+      orgId: ctx.orgId, userId: ctx.userId, entityType: 'proforma', entityId: id,
+      action: 'update', newValues: { status: 'approved' },
+    })
+
+    revalidatePath('/proformas')
+    revalidatePath(`/proformas/${id}`)
+    return {}
+  }
+
+  // Normal flow: submit for approval by another approver.
   // Clears any prior rejection — resubmitting always requires a fresh review.
   const { error } = await ctx.supabase
     .from('proformas')
