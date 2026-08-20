@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getPlanStatus } from '@/lib/subscription'
 import { OrgSettingsForm } from '@/components/settings/org-settings-form'
 import { EmailSenderForm } from '@/components/settings/email-sender-form'
 import type { Organization } from '@/types/database'
@@ -15,15 +16,17 @@ export default async function OrganizationSettingsPage() {
     .from('users').select('organization_id, role').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
-  const { data: org } = await supabase
-    .from('organizations').select('*').eq('id', userRecord.organization_id).single()
+  const [{ data: org }, plan] = await Promise.all([
+    supabase.from('organizations').select('*').eq('id', userRecord.organization_id).single(),
+    getPlanStatus(userRecord.organization_id, supabase),
+  ])
   if (!org) redirect('/onboard')
 
   const canEdit = userRecord.role === 'owner' || userRecord.role === 'admin'
 
   return (
     <div className="space-y-6">
-      <OrgSettingsForm org={org as Organization} canEdit={canEdit} />
+      <OrgSettingsForm org={org as Organization} canEdit={canEdit} canUseApprovalWorkflow={plan.canUseApprovalWorkflow} />
       <EmailSenderForm emailPrefix={(org as Organization).email_prefix} canEdit={canEdit} />
     </div>
   )

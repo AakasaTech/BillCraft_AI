@@ -11,21 +11,23 @@ export const metadata = {
 }
 
 const STATUS_LABEL: Record<ProformaStatus, string> = {
-  draft:     'Draft',
-  sent:      'Pending your response',
-  viewed:    'Pending your response',
-  accepted:  'Accepted',
-  converted: 'Accepted',
-  expired:   'Expired',
+  draft:             'Draft',
+  pending_approval:  'Pending approval',
+  sent:              'Pending your response',
+  viewed:            'Pending your response',
+  accepted:          'Accepted',
+  converted:         'Accepted',
+  expired:           'Expired',
 }
 
 const STATUS_STYLE: Record<ProformaStatus, string> = {
-  draft:     'bg-muted text-muted-foreground',
-  sent:      'bg-amber-100 text-amber-700',
-  viewed:    'bg-amber-100 text-amber-700',
-  accepted:  'bg-green-100 text-green-700',
-  converted: 'bg-green-100 text-green-700',
-  expired:   'bg-muted text-muted-foreground',
+  draft:             'bg-muted text-muted-foreground',
+  pending_approval:  'bg-amber-100 text-amber-700',
+  sent:              'bg-amber-100 text-amber-700',
+  viewed:            'bg-amber-100 text-amber-700',
+  accepted:          'bg-green-100 text-green-700',
+  converted:         'bg-green-100 text-green-700',
+  expired:           'bg-muted text-muted-foreground',
 }
 
 export default async function PublicProformaPage({

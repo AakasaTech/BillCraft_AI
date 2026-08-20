@@ -11,21 +11,23 @@ export const metadata = {
 }
 
 const STATUS_LABEL: Record<EstimateStatus, string> = {
-  draft:    'Draft',
-  sent:     'Pending your response',
-  viewed:   'Pending your response',
-  accepted: 'Accepted',
-  declined: 'Declined',
-  expired:  'Expired',
+  draft:             'Draft',
+  pending_approval:  'Pending approval',
+  sent:              'Pending your response',
+  viewed:            'Pending your response',
+  accepted:          'Accepted',
+  declined:          'Declined',
+  expired:           'Expired',
 }
 
 const STATUS_STYLE: Record<EstimateStatus, string> = {
-  draft:    'bg-muted text-muted-foreground',
-  sent:     'bg-amber-100 text-amber-700',
-  viewed:   'bg-amber-100 text-amber-700',
-  accepted: 'bg-green-100 text-green-700',
-  declined: 'bg-red-100 text-red-700',
-  expired:  'bg-muted text-muted-foreground',
+  draft:             'bg-muted text-muted-foreground',
+  pending_approval:  'bg-amber-100 text-amber-700',
+  sent:              'bg-amber-100 text-amber-700',
+  viewed:            'bg-amber-100 text-amber-700',
+  accepted:          'bg-green-100 text-green-700',
+  declined:          'bg-red-100 text-red-700',
+  expired:           'bg-muted text-muted-foreground',
 }
 
 export default async function PublicEstimatePage({

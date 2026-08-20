@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PlusIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { approvalGateActive } from '@/lib/invoice-approval'
 import { ProformasTable } from '@/components/proformas/proformas-table'
 import { Button } from '@/components/ui/button'
 import type { ProformaStatus } from '@/types/database'
@@ -22,6 +23,8 @@ export default async function ProformasPage() {
   const { data: org } = await supabase
     .from('organizations').select('category').eq('id', orgId).single()
   if (org?.category !== 'trading') redirect('/dashboard')
+
+  const approvalRequired = await approvalGateActive(orgId, supabase)
 
   const { data: proformasRawResult } = await supabase
     .from('proformas')
@@ -61,7 +64,7 @@ export default async function ProformasPage() {
         </Button>
       </div>
 
-      <ProformasTable proformas={proformas} />
+      <ProformasTable proformas={proformas} approvalRequired={approvalRequired} />
     </div>
   )
 }

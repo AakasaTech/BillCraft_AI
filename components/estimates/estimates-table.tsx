@@ -22,18 +22,20 @@ type EstimateRow = Pick<Estimate,
 > & { client_name: string }
 
 interface EstimatesTableProps {
-  estimates: EstimateRow[]
+  estimates:        EstimateRow[]
+  approvalRequired?: boolean
 }
 
 const TABS: { key: string; label: string; statuses: EstimateStatus[] | null }[] = [
-  { key: 'all',      label: 'All',       statuses: null },
-  { key: 'draft',    label: 'Draft',     statuses: ['draft'] },
-  { key: 'open',     label: 'Sent',      statuses: ['sent', 'viewed'] },
-  { key: 'accepted', label: 'Accepted',  statuses: ['accepted'] },
-  { key: 'declined', label: 'Declined',  statuses: ['declined', 'expired'] },
+  { key: 'all',              label: 'All',           statuses: null },
+  { key: 'draft',            label: 'Draft',         statuses: ['draft'] },
+  { key: 'pending_approval', label: 'Pending approval', statuses: ['pending_approval'] },
+  { key: 'open',             label: 'Sent',          statuses: ['sent', 'viewed'] },
+  { key: 'accepted',         label: 'Accepted',      statuses: ['accepted'] },
+  { key: 'declined',         label: 'Declined',      statuses: ['declined', 'expired'] },
 ]
 
-export function EstimatesTable({ estimates }: EstimatesTableProps) {
+export function EstimatesTable({ estimates, approvalRequired = false }: EstimatesTableProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('all')
   const [isPending, startTransition] = useTransition()
@@ -122,7 +124,7 @@ export function EstimatesTable({ estimates }: EstimatesTableProps) {
                           <Link href={`/estimates/${est.id}`}><Eye className="h-3.5 w-3.5" /></Link>
                         </Button>
 
-                        {est.status === 'draft' && (
+                        {est.status === 'draft' && !approvalRequired && (
                           <>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={`/estimates/${est.id}/edit`}><Pencil className="h-3.5 w-3.5" /></Link>

@@ -9,6 +9,8 @@ import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildProformaEmail } from '@/lib/email/proforma-template'
 import { proformaFormSchema, type ProformaFormData } from '@/lib/validations/proformas'
+import { approvalGateActive } from '@/lib/invoice-approval'
+import { logAudit } from '@/lib/audit'
 import type {
   Proforma, ProformaItem, Estimate, EstimateItem, Client, ClientSubunit, Organization,
 } from '@/types/database'
@@ -521,10 +523,14 @@ export async function sendProformaEmailAction(id: string): Promise<ActionResult>
 
   if (!proformaRaw || !org) return { error: 'Proforma not found' }
 
+  const proforma = proformaRaw as Proforma & { clients: Client | null }
+  if (proforma.status === 'draft' && await approvalGateActive(ctx.orgId, ctx.supabase) && !proforma.approved_at) {
+    return { error: 'This proforma must be approved before it can be sent. Submit it for approval first.' }
+  }
+
   const fromEmail = resolveFromAddress((org as Organization).email_prefix)
   if (!fromEmail) return { error: 'Sender email is not configured.' }
 
-  const proforma = proformaRaw as Proforma & { clients: Client | null }
   const client   = proforma.clients
   if (!client?.email) return { error: 'Client has no email address.' }
 
@@ -596,4 +602,127 @@ export async function sendProformaEmailAction(id: string): Promise<ActionResult>
   revalidatePath('/proformas')
   revalidatePath(`/proformas/${id}`)
   return { success: true }
+}
+
+// ── Approval workflow (Agency plan) ─────────────────────────────────────────
+// Mirrors the invoice/estimate approval flow. Shares the org-wide approver flag
+// and the Agency gate via approvalGateActive (which also checks
+// approval_flow_enabled), so the owner can disable the whole flow from settings.
+
+async function requireApprover(ctx: { supabase: any; userId: string }) {
+  const { data: caller } = await ctx.supabase
+    .from('users').select('is_invoice_approver').eq('id', ctx.userId).single()
+  return caller?.is_invoice_approver === true
+}
+
+export async function submitProformaForApprovalAction(id: string): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await approvalGateActive(ctx.orgId, ctx.supabase))) {
+    return { error: 'Approval workflow is not available.' }
+  }
+
+  // Clears any prior rejection — resubmitting always requires a fresh review.
+  const { error } = await ctx.supabase
+    .from('proformas')
+    .update({
+      status:                    'pending_approval',
+      submitted_for_approval_at: new Date().toISOString(),
+      approved_by:                null,
+      approved_at:                null,
+      rejected_by:                null,
+      rejected_at:                null,
+      rejection_note:             null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'draft')
+
+  if (error) return { error: 'Only draft proformas can be submitted for approval.' }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'proforma', entityId: id,
+    action: 'update', newValues: { status: 'pending_approval' },
+  })
+
+  revalidatePath('/proformas')
+  revalidatePath(`/proformas/${id}`)
+  return {}
+}
+
+export async function approveProformaAction(id: string): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await requireApprover(ctx))) return { error: 'Only designated approvers can approve proformas.' }
+
+  const { data: pf } = await ctx.supabase
+    .from('proformas').select('created_by, status').eq('id', id).eq('organization_id', ctx.orgId).single()
+  if (!pf) return { error: 'Proforma not found.' }
+  if (pf.status !== 'pending_approval') return { error: 'This proforma is not awaiting approval.' }
+  // Maker-checker: the person who created the proforma can't also approve it.
+  if (pf.created_by === ctx.userId) return { error: 'You cannot approve a proforma you created yourself.' }
+
+  const { error } = await ctx.supabase
+    .from('proformas')
+    .update({
+      status:      'draft',
+      approved_by: ctx.userId,
+      approved_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'pending_approval')
+
+  if (error) return { error: error.message }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'proforma', entityId: id,
+    action: 'update', newValues: { status: 'approved' },
+  })
+
+  revalidatePath('/proformas')
+  revalidatePath(`/proformas/${id}`)
+  return {}
+}
+
+export async function rejectProformaAction(id: string, note: string): Promise<ActionResult> {
+  if (!note.trim()) return { error: 'A rejection note is required.' }
+
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await requireApprover(ctx))) return { error: 'Only designated approvers can reject proformas.' }
+
+  const { data: pf } = await ctx.supabase
+    .from('proformas').select('created_by, status').eq('id', id).eq('organization_id', ctx.orgId).single()
+  if (!pf) return { error: 'Proforma not found.' }
+  if (pf.status !== 'pending_approval') return { error: 'This proforma is not awaiting approval.' }
+  if (pf.created_by === ctx.userId) return { error: 'You cannot reject a proforma you created yourself.' }
+
+  const { error } = await ctx.supabase
+    .from('proformas')
+    .update({
+      status:         'draft',
+      rejected_by:    ctx.userId,
+      rejected_at:    new Date().toISOString(),
+      rejection_note: note.trim(),
+      approved_by:    null,
+      approved_at:    null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'pending_approval')
+
+  if (error) return { error: error.message }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'proforma', entityId: id,
+    action: 'update', newValues: { status: 'rejected', rejection_note: note.trim() },
+  })
+
+  revalidatePath('/proformas')
+  revalidatePath(`/proformas/${id}`)
+  return {}
 }

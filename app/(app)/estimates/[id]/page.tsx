@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { approvalGateActive } from '@/lib/invoice-approval'
 import { EstimateDetailView } from '@/components/estimates/estimate-detail-view'
 import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
@@ -17,24 +18,27 @@ export default async function EstimateDetailPage({ params }: { params: Promise<{
 
   const orgId = userRecord.organization_id
 
-  const [{ data: estimateRaw }, { data: itemsRaw }, { data: org }] = await Promise.all([
-    supabase
-      .from('estimates')
-      .select('*, clients(*)')
-      .eq('id', id)
-      .eq('organization_id', orgId)
-      .is('deleted_at', null)
-      .single(),
-    supabase
-      .from('estimate_items')
-      .select('*')
-      .eq('estimate_id', id)
-      .order('sort_order'),
-    supabase
-      .from('organizations')
-      .select('*')
-      .eq('id', orgId)
-      .single(),
+  const [approvalRequired, [{ data: estimateRaw }, { data: itemsRaw }, { data: org }]] = await Promise.all([
+    approvalGateActive(orgId, supabase),
+    Promise.all([
+      supabase
+        .from('estimates')
+        .select('*, clients(*)')
+        .eq('id', id)
+        .eq('organization_id', orgId)
+        .is('deleted_at', null)
+        .single(),
+      supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', id)
+        .order('sort_order'),
+      supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', orgId)
+        .single(),
+    ]),
   ])
 
   if (!estimateRaw || !org) notFound()
@@ -60,6 +64,9 @@ export default async function EstimateDetailPage({ params }: { params: Promise<{
       client={client}
       clientSubunit={clientSubunit}
       org={org as Organization}
+      approvalRequired={approvalRequired}
+      canApprove={userRecord.is_invoice_approver === true}
+      isCreator={estimate.created_by === user.id}
     />
   )
 }

@@ -21,6 +21,7 @@ export const orgSettingsSchema = z.object({
   tax_registration_number:  opt(100),
   invoice_prefix:           z.string().max(20).optional().or(z.literal('')),
   website:                  opt(255),
+  approval_flow_enabled:    z.boolean().default(false),
   payment_instructions:     z.array(paymentInstructionSchema).max(5).default([]),
 })
 

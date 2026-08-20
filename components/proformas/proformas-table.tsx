@@ -24,19 +24,21 @@ type ProformaRow = Pick<Proforma,
 > & { client_name: string }
 
 interface ProformasTableProps {
-  proformas: ProformaRow[]
+  proformas:        ProformaRow[]
+  approvalRequired?: boolean
 }
 
 const TABS: { key: string; label: string; statuses: ProformaStatus[] | null }[] = [
-  { key: 'all',       label: 'All',       statuses: null },
-  { key: 'draft',     label: 'Draft',     statuses: ['draft'] },
-  { key: 'open',      label: 'Sent',      statuses: ['sent', 'viewed'] },
-  { key: 'accepted',  label: 'Accepted',  statuses: ['accepted'] },
-  { key: 'converted', label: 'Converted', statuses: ['converted'] },
-  { key: 'expired',   label: 'Expired',   statuses: ['expired'] },
+  { key: 'all',              label: 'All',           statuses: null },
+  { key: 'draft',            label: 'Draft',         statuses: ['draft'] },
+  { key: 'pending_approval', label: 'Pending approval', statuses: ['pending_approval'] },
+  { key: 'open',             label: 'Sent',          statuses: ['sent', 'viewed'] },
+  { key: 'accepted',         label: 'Accepted',      statuses: ['accepted'] },
+  { key: 'converted',        label: 'Converted',     statuses: ['converted'] },
+  { key: 'expired',          label: 'Expired',       statuses: ['expired'] },
 ]
 
-export function ProformasTable({ proformas }: ProformasTableProps) {
+export function ProformasTable({ proformas, approvalRequired = false }: ProformasTableProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('all')
   const [isPending, startTransition] = useTransition()
@@ -133,7 +135,7 @@ export function ProformasTable({ proformas }: ProformasTableProps) {
                           <Link href={`/proformas/${pf.id}`}><Eye className="h-3.5 w-3.5" /></Link>
                         </Button>
 
-                        {pf.status === 'draft' && (
+                        {pf.status === 'draft' && !approvalRequired && (
                           <>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={`/proformas/${pf.id}/edit`}><Pencil className="h-3.5 w-3.5" /></Link>

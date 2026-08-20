@@ -42,6 +42,7 @@ export async function updateOrgSettingsAction(data: OrgSettingsData): Promise<Ac
       tax_registration_number: parsed.data.tax_registration_number || null,
       invoice_prefix:          parsed.data.invoice_prefix || null,
       website:                 parsed.data.website || null,
+      approval_flow_enabled:   parsed.data.approval_flow_enabled ?? false,
       payment_instructions:    parsed.data.payment_instructions ?? [],
     })
     .eq('id', ctx.orgId)

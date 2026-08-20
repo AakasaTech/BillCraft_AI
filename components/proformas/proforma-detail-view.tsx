@@ -1,17 +1,22 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Pencil, Send, FileCheck2, Clock, Trash2, ArrowRight, ExternalLink } from 'lucide-react'
+import {
+  Pencil, Send, FileCheck2, Clock, Trash2, ArrowRight, ExternalLink,
+  Loader2, ClipboardCheck, ThumbsUp, ThumbsDown,
+} from 'lucide-react'
 import { ProformaStatusBadge } from '@/components/proformas/proforma-status-badge'
 import {
   sendProformaEmailAction, markProformaStatusAction,
   deleteProformaAction, convertProformaToInvoiceAction,
+  submitProformaForApprovalAction, approveProformaAction, rejectProformaAction,
 } from '@/app/actions/proformas'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -21,16 +26,24 @@ import {
 import type { Proforma, ProformaItem, Client, ClientSubunit, Organization, ProformaStatus } from '@/types/database'
 
 interface ProformaDetailViewProps {
-  proforma:      Proforma
-  items:         ProformaItem[]
-  client:        Client
-  clientSubunit: ClientSubunit | null
-  org:           Organization
+  proforma:          Proforma
+  items:             ProformaItem[]
+  client:            Client
+  clientSubunit:     ClientSubunit | null
+  org:               Organization
+  approvalRequired?: boolean
+  canApprove?:       boolean
+  isCreator?:        boolean
 }
 
-export function ProformaDetailView({ proforma, items, client, clientSubunit, org }: ProformaDetailViewProps) {
+export function ProformaDetailView({
+  proforma, items, client, clientSubunit, org,
+  approvalRequired = false, canApprove = false, isCreator = false,
+}: ProformaDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [rejecting, setRejecting] = useState(false)
+  const [rejectNote, setRejectNote] = useState('')
   const status = proforma.status as ProformaStatus
 
   const handleSend = () => startTransition(async () => {
@@ -56,6 +69,36 @@ export function ProformaDetailView({ proforma, items, client, clientSubunit, org
     if (r?.error) toast.error(r.error)
     else { toast.success('Invoice created!'); router.push(`/invoices/${r.invoiceId}/edit`) }
   })
+
+  const handleSubmitForApproval = () => startTransition(async () => {
+    const r = await submitProformaForApprovalAction(proforma.id)
+    if (r?.error) toast.error(r.error)
+    else { toast.success('Submitted for approval.'); router.refresh() }
+  })
+
+  const handleApprove = () => startTransition(async () => {
+    const r = await approveProformaAction(proforma.id)
+    if (r?.error) toast.error(r.error)
+    else { toast.success('Proforma approved.'); router.refresh() }
+  })
+
+  const handleReject = () => startTransition(async () => {
+    const r = await rejectProformaAction(proforma.id, rejectNote)
+    if (r?.error) { toast.error(r.error); return }
+    toast.success('Proforma rejected.')
+    setRejecting(false)
+    setRejectNote('')
+    router.refresh()
+  })
+
+  const isDraft                = status === 'draft'
+  const draftSendable          = isDraft && !approvalRequired
+  const canSubmit              = isDraft && approvalRequired
+  const canActOnApproval       = status === 'pending_approval' && canApprove && !isCreator
+  const awaitingOthersApproval = status === 'pending_approval' && !canActOnApproval
+  const canEdit   = isDraft
+  const canSend   = draftSendable || status === 'viewed'
+  const canShare  = !!proforma.share_token && !['draft', 'pending_approval'].includes(status)
 
   const billToAddr1   = clientSubunit?.address_line1 ?? client.address_line1
   const billToCity    = clientSubunit?.city           ?? client.city
@@ -87,16 +130,45 @@ export function ProformaDetailView({ proforma, items, client, clientSubunit, org
             </Button>
           )}
 
-          {status === 'draft' && (
+          {canEdit && (
             <Button variant="outline" size="sm" asChild>
               <Link href={`/proformas/${proforma.id}/edit`}><Pencil className="mr-2 h-4 w-4" /> Edit</Link>
             </Button>
           )}
 
-          {(status === 'draft' || status === 'sent' || status === 'viewed') && (
+          {canSend && (
             <Button variant="outline" size="sm" disabled={isPending} onClick={handleSend}>
               <Send className="mr-2 h-4 w-4" /> {status === 'draft' ? 'Send' : 'Resend'}
             </Button>
+          )}
+
+          {canSubmit && (
+            <Button size="sm" onClick={handleSubmitForApproval} disabled={isPending}>
+              {isPending
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <ClipboardCheck className="mr-2 h-4 w-4" />}
+              Submit for approval
+            </Button>
+          )}
+
+          {awaitingOthersApproval && (
+            <span className="inline-flex items-center rounded-md border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+              {isCreator ? 'Awaiting approval from another approver' : 'Awaiting approval'}
+            </span>
+          )}
+
+          {canActOnApproval && !rejecting && (
+            <>
+              <Button size="sm" onClick={handleApprove} disabled={isPending}>
+                {isPending
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <ThumbsUp className="mr-2 h-4 w-4" />}
+                Approve
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setRejecting(true)} disabled={isPending}>
+                <ThumbsDown className="mr-2 h-4 w-4" /> Reject
+              </Button>
+            </>
           )}
 
           {status === 'accepted' && !proforma.converted_invoice_id && (
@@ -150,6 +222,37 @@ export function ProformaDetailView({ proforma, items, client, clientSubunit, org
           </AlertDialog>
         </div>
       </div>
+
+      {isDraft && proforma.rejection_note && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <span className="font-medium">Rejected: </span>{proforma.rejection_note}
+        </div>
+      )}
+
+      {rejecting && (
+        <div className="w-full space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <Textarea
+            value={rejectNote}
+            onChange={e => setRejectNote(e.target.value)}
+            placeholder="Explain what needs to change before this can be approved…"
+            rows={2}
+            className="resize-none bg-background"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setRejecting(false); setRejectNote('') }} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive" size="sm"
+              onClick={handleReject}
+              disabled={isPending || !rejectNote.trim()}
+            >
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm rejection
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Response info */}
       {proforma.responded_at && (
@@ -282,7 +385,7 @@ export function ProformaDetailView({ proforma, items, client, clientSubunit, org
         )}
       </div>
 
-      {proforma.share_token && (
+      {canShare && (
         <div className="flex justify-end">
           <a
             href={`/api/pr/${proforma.share_token}/pdf`}

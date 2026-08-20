@@ -14,6 +14,7 @@ export type InvoiceStatus =
   | 'void';
 export type EstimateStatus =
   | 'draft'
+  | 'pending_approval'
   | 'sent'
   | 'viewed'
   | 'accepted'
@@ -21,6 +22,7 @@ export type EstimateStatus =
   | 'expired';
 export type ProformaStatus =
   | 'draft'
+  | 'pending_approval'
   | 'sent'
   | 'viewed'
   | 'accepted'
@@ -120,6 +122,7 @@ export interface Organization {
   late_fee_percentage: number;
   late_fee_after_days: number;
   active_email_provider: EmailConnectionProvider | null;
+  approval_flow_enabled: boolean;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -451,6 +454,13 @@ export interface Estimate {
   converted_proforma_id: string | null;
   client_subunit_id: string | null;
   is_simplified: boolean;
+  // Approval workflow (Agency plan)
+  submitted_for_approval_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_note: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -497,6 +507,13 @@ export interface Proforma {
   response_note: string | null;
   share_token: string | null;
   converted_invoice_id: string | null;
+  // Approval workflow (Agency plan)
+  submitted_for_approval_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_note: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

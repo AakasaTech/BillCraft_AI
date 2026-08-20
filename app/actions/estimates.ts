@@ -10,6 +10,9 @@ import { buildEstimateEmail } from '@/lib/email/estimate-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { estimateFormSchema, type EstimateFormData } from '@/lib/validations/estimates'
 import { convertEstimateToProformaAction } from '@/app/actions/proformas'
+import { approvalGateActive } from '@/lib/invoice-approval'
+import { logAudit } from '@/lib/audit'
+import type { AuditAction } from '@/types/database'
 import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
@@ -222,10 +225,14 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
 
   if (!estimateRaw || !org) return { error: 'Estimate not found' }
 
+  const estimate = estimateRaw as Estimate & { clients: Client | null }
+  if (estimate.status === 'draft' && await approvalGateActive(ctx.orgId, ctx.supabase) && !estimate.approved_at) {
+    return { error: 'This estimate must be approved before it can be sent. Submit it for approval first.' }
+  }
+
   const fromEmail = resolveFromAddress((org as Organization).email_prefix)
   if (!fromEmail) return { error: 'Sender email is not configured.' }
 
-  const estimate = estimateRaw as Estimate & { clients: Client | null }
   const client   = estimate.clients
   if (!client?.email) return { error: 'Client has no email address.' }
 
@@ -321,6 +328,129 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
   revalidatePath('/estimates')
   revalidatePath(`/estimates/${id}`)
   return { success: true }
+}
+
+// ── Approval workflow (Agency plan) ─────────────────────────────────────────
+// Mirrors lib/.../actions/invoices.ts. The org-wide approver flag and the
+// Agency gate are shared; estimates add an 'approval_flow_enabled' check via
+// approvalGateActive so the owner can disable the whole flow from settings.
+
+async function requireApprover(ctx: { supabase: any; userId: string }) {
+  const { data: caller } = await ctx.supabase
+    .from('users').select('is_invoice_approver').eq('id', ctx.userId).single()
+  return caller?.is_invoice_approver === true
+}
+
+export async function submitEstimateForApprovalAction(id: string): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await approvalGateActive(ctx.orgId, ctx.supabase))) {
+    return { error: 'Approval workflow is not available.' }
+  }
+
+  // Clears any prior rejection — resubmitting always requires a fresh review.
+  const { error } = await ctx.supabase
+    .from('estimates')
+    .update({
+      status:                    'pending_approval',
+      submitted_for_approval_at: new Date().toISOString(),
+      approved_by:                null,
+      approved_at:                null,
+      rejected_by:                null,
+      rejected_at:                null,
+      rejection_note:             null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'draft')
+
+  if (error) return { error: 'Only draft estimates can be submitted for approval.' }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'estimate', entityId: id,
+    action: 'update', newValues: { status: 'pending_approval' },
+  })
+
+  revalidatePath('/estimates')
+  revalidatePath(`/estimates/${id}`)
+  return {}
+}
+
+export async function approveEstimateAction(id: string): Promise<ActionResult> {
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await requireApprover(ctx))) return { error: 'Only designated approvers can approve estimates.' }
+
+  const { data: est } = await ctx.supabase
+    .from('estimates').select('created_by, status').eq('id', id).eq('organization_id', ctx.orgId).single()
+  if (!est) return { error: 'Estimate not found.' }
+  if (est.status !== 'pending_approval') return { error: 'This estimate is not awaiting approval.' }
+  // Maker-checker: the person who created the estimate can't also approve it.
+  if (est.created_by === ctx.userId) return { error: 'You cannot approve an estimate you created yourself.' }
+
+  const { error } = await ctx.supabase
+    .from('estimates')
+    .update({
+      status:      'draft',
+      approved_by: ctx.userId,
+      approved_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'pending_approval')
+
+  if (error) return { error: error.message }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'estimate', entityId: id,
+    action: 'update', newValues: { status: 'approved' },
+  })
+
+  revalidatePath('/estimates')
+  revalidatePath(`/estimates/${id}`)
+  return {}
+}
+
+export async function rejectEstimateAction(id: string, note: string): Promise<ActionResult> {
+  if (!note.trim()) return { error: 'A rejection note is required.' }
+
+  const ctx = await getCtx()
+  if (!ctx) return { error: 'Not authenticated' }
+
+  if (!(await requireApprover(ctx))) return { error: 'Only designated approvers can reject estimates.' }
+
+  const { data: est } = await ctx.supabase
+    .from('estimates').select('created_by, status').eq('id', id).eq('organization_id', ctx.orgId).single()
+  if (!est) return { error: 'Estimate not found.' }
+  if (est.status !== 'pending_approval') return { error: 'This estimate is not awaiting approval.' }
+  if (est.created_by === ctx.userId) return { error: 'You cannot reject an estimate you created yourself.' }
+
+  const { error } = await ctx.supabase
+    .from('estimates')
+    .update({
+      status:         'draft',
+      rejected_by:    ctx.userId,
+      rejected_at:    new Date().toISOString(),
+      rejection_note: note.trim(),
+      approved_by:    null,
+      approved_at:    null,
+    })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+    .eq('status', 'pending_approval')
+
+  if (error) return { error: error.message }
+
+  logAudit(ctx.supabase, {
+    orgId: ctx.orgId, userId: ctx.userId, entityType: 'estimate', entityId: id,
+    action: 'update', newValues: { status: 'rejected', rejection_note: note.trim() },
+  })
+
+  revalidatePath('/estimates')
+  revalidatePath(`/estimates/${id}`)
+  return {}
 }
 
 export async function convertToInvoiceAction(id: string): Promise<{ error?: string; invoiceId?: string }> {

@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { approvalGateActive } from '@/lib/invoice-approval'
 import { ProformaDetailView } from '@/components/proformas/proforma-detail-view'
 import type { Proforma, ProformaItem, Client, ClientSubunit, Organization } from '@/types/database'
 
@@ -17,24 +18,27 @@ export default async function ProformaDetailPage({ params }: { params: Promise<{
 
   const orgId = userRecord.organization_id
 
-  const [{ data: proformaRaw }, { data: itemsRaw }, { data: org }] = await Promise.all([
-    supabase
-      .from('proformas')
-      .select('*, clients(*)')
-      .eq('id', id)
-      .eq('organization_id', orgId)
-      .is('deleted_at', null)
-      .single(),
-    supabase
-      .from('proforma_items')
-      .select('*')
-      .eq('proforma_id', id)
-      .order('sort_order'),
-    supabase
-      .from('organizations')
-      .select('*')
-      .eq('id', orgId)
-      .single(),
+  const [approvalRequired, [{ data: proformaRaw }, { data: itemsRaw }, { data: org }]] = await Promise.all([
+    approvalGateActive(orgId, supabase),
+    Promise.all([
+      supabase
+        .from('proformas')
+        .select('*, clients(*)')
+        .eq('id', id)
+        .eq('organization_id', orgId)
+        .is('deleted_at', null)
+        .single(),
+      supabase
+        .from('proforma_items')
+        .select('*')
+        .eq('proforma_id', id)
+        .order('sort_order'),
+      supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', orgId)
+        .single(),
+    ]),
   ])
 
   if (!proformaRaw || !org) notFound()
@@ -60,6 +64,9 @@ export default async function ProformaDetailPage({ params }: { params: Promise<{
       client={client}
       clientSubunit={clientSubunit}
       org={org as Organization}
+      approvalRequired={approvalRequired}
+      canApprove={userRecord.is_invoice_approver === true}
+      isCreator={proforma.created_by === user.id}
     />
   )
 }

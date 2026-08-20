@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -20,11 +21,12 @@ import { LogoUpload } from '@/components/settings/logo-upload'
 import type { Organization } from '@/types/database'
 
 interface OrgSettingsFormProps {
-  org:     Organization
-  canEdit: boolean
+  org:                    Organization
+  canEdit:                boolean
+  canUseApprovalWorkflow: boolean
 }
 
-export function OrgSettingsForm({ org, canEdit }: OrgSettingsFormProps) {
+export function OrgSettingsForm({ org, canEdit, canUseApprovalWorkflow }: OrgSettingsFormProps) {
   const [isPending, startTransition] = useTransition()
 
   const form = useForm<OrgSettingsData>({
@@ -43,6 +45,7 @@ export function OrgSettingsForm({ org, canEdit }: OrgSettingsFormProps) {
       tax_registration_number: org.tax_registration_number ?? '',
       invoice_prefix:          org.invoice_prefix ?? '',
       website:                 org.website ?? '',
+      approval_flow_enabled:   org.approval_flow_enabled ?? false,
       payment_instructions:    (org.payment_instructions ?? []) as { name: string; content: string }[],
     },
   })
@@ -238,6 +241,28 @@ export function OrgSettingsForm({ org, canEdit }: OrgSettingsFormProps) {
             </p>
           </div>
         </div>
+
+        {canUseApprovalWorkflow && (
+          <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Approval flow</p>
+              <p className="text-xs text-muted-foreground">
+                Require designated approvers to approve invoices, quotes, and proformas before they can be sent.
+              </p>
+            </div>
+            <Controller
+              control={form.control}
+              name="approval_flow_enabled"
+              render={({ field: f }) => (
+                <Switch
+                  checked={f.value}
+                  disabled={!canEdit}
+                  onCheckedChange={f.onChange}
+                />
+              )}
+            />
+          </div>
+        )}
       </section>
 
       {/* ── Payment Instructions ──────────────────────────────── */}
