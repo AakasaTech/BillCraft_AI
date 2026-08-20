@@ -9,7 +9,7 @@ import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildProformaEmail } from '@/lib/email/proforma-template'
 import { proformaFormSchema, type ProformaFormData } from '@/lib/validations/proformas'
-import { approvalGateActive } from '@/lib/invoice-approval'
+import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type {
   Proforma, ProformaItem, Estimate, EstimateItem, Client, ClientSubunit, Organization,
@@ -525,7 +525,21 @@ export async function sendProformaEmailAction(id: string): Promise<ActionResult>
 
   const proforma = proformaRaw as Proforma & { clients: Client | null }
   if (proforma.status === 'draft' && await approvalGateActive(ctx.orgId, ctx.supabase) && !proforma.approved_at) {
-    return { error: 'This proforma must be approved before it can be sent. Submit it for approval first.' }
+    // Sole-approver org: no separate reviewer exists, so auto-approve on send.
+    const approverCount = await getApproverCount(ctx.orgId, ctx.supabase)
+    if (approverCount === 1) {
+      await ctx.supabase
+        .from('proformas')
+        .update({
+          status:      'draft',
+          approved_by: ctx.userId,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('organization_id', ctx.orgId)
+    } else {
+      return { error: 'This proforma must be approved before it can be sent. Submit it for approval first.' }
+    }
   }
 
   const fromEmail = resolveFromAddress((org as Organization).email_prefix)

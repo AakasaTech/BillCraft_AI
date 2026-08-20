@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PlusIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { approvalGateActive } from '@/lib/invoice-approval'
+import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
 import { EstimatesTable } from '@/components/estimates/estimates-table'
 import { Button } from '@/components/ui/button'
 import type { Estimate, EstimateStatus } from '@/types/database'
@@ -18,7 +18,10 @@ export default async function EstimatesPage() {
     .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
-  const [approvalRequired] = await Promise.all([approvalGateActive(userRecord.organization_id, supabase)])
+  const [approvalRequired, approverCount] = await Promise.all([
+    approvalGateActive(userRecord.organization_id, supabase),
+    getApproverCount(userRecord.organization_id, supabase),
+  ])
 
   const { data: estimatesRawResult } = await supabase
     .from('estimates')
@@ -58,7 +61,7 @@ export default async function EstimatesPage() {
         </Button>
       </div>
 
-      <EstimatesTable estimates={estimates} approvalRequired={approvalRequired} />
+      <EstimatesTable estimates={estimates} approvalRequired={approvalRequired} soleApprover={approvalRequired && approverCount === 1} />
     </div>
   )
 }

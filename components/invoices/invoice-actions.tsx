@@ -33,12 +33,13 @@ interface InvoiceActionsProps {
   approvalRequired?: boolean
   canApprove?:       boolean
   isCreator?:        boolean
+  isSoleApprover?:   boolean
   rejectionNote?:    string | null
 }
 
 export function InvoiceActions({
   invoiceId, status, clientEmail, amountDue, currency, shareToken, canUseAI = false,
-  approvalRequired = false, canApprove = false, isCreator = false, rejectionNote,
+  approvalRequired = false, canApprove = false, isCreator = false, isSoleApprover = false, rejectionNote,
 }: InvoiceActionsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -108,8 +109,10 @@ export function InvoiceActions({
   }
 
   const isDraft         = status === 'draft'
-  const draftSendable   = isDraft && !approvalRequired
-  const canSubmit       = isDraft && approvalRequired
+  // Sole-approver orgs don't need a separate reviewer: drafts are sendable
+  // directly (the send auto-approves), so "Submit for approval" is hidden.
+  const draftSendable   = isDraft && (!approvalRequired || isSoleApprover)
+  const canSubmit       = isDraft && approvalRequired && !isSoleApprover
   const canActOnApproval = status === 'pending_approval' && canApprove && !isCreator
   const awaitingOthersApproval = status === 'pending_approval' && !canActOnApproval
 

@@ -10,7 +10,7 @@ import { buildEstimateEmail } from '@/lib/email/estimate-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { estimateFormSchema, type EstimateFormData } from '@/lib/validations/estimates'
 import { convertEstimateToProformaAction } from '@/app/actions/proformas'
-import { approvalGateActive } from '@/lib/invoice-approval'
+import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type { AuditAction } from '@/types/database'
 import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
@@ -227,7 +227,21 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
 
   const estimate = estimateRaw as Estimate & { clients: Client | null }
   if (estimate.status === 'draft' && await approvalGateActive(ctx.orgId, ctx.supabase) && !estimate.approved_at) {
-    return { error: 'This estimate must be approved before it can be sent. Submit it for approval first.' }
+    // Sole-approver org: no separate reviewer exists, so auto-approve on send.
+    const approverCount = await getApproverCount(ctx.orgId, ctx.supabase)
+    if (approverCount === 1) {
+      await ctx.supabase
+        .from('estimates')
+        .update({
+          status:      'draft',
+          approved_by: ctx.userId,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('organization_id', ctx.orgId)
+    } else {
+      return { error: 'This estimate must be approved before it can be sent. Submit it for approval first.' }
+    }
   }
 
   const fromEmail = resolveFromAddress((org as Organization).email_prefix)

@@ -34,11 +34,12 @@ interface EstimateDetailViewProps {
   approvalRequired?: boolean
   canApprove?:       boolean
   isCreator?:        boolean
+  isSoleApprover?:   boolean
 }
 
 export function EstimateDetailView({
   estimate, items, client, clientSubunit, org,
-  approvalRequired = false, canApprove = false, isCreator = false,
+  approvalRequired = false, canApprove = false, isCreator = false, isSoleApprover = false,
 }: EstimateDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -98,8 +99,10 @@ export function EstimateDetailView({
   })
 
   const isDraft              = status === 'draft'
-  const draftSendable        = isDraft && !approvalRequired
-  const canSubmit            = isDraft && approvalRequired
+  // Sole-approver orgs don't need a separate reviewer: drafts are sendable
+  // directly (the send auto-approves), so "Submit for approval" is hidden.
+  const draftSendable        = isDraft && (!approvalRequired || isSoleApprover)
+  const canSubmit            = isDraft && approvalRequired && !isSoleApprover
   const canActOnApproval     = status === 'pending_approval' && canApprove && !isCreator
   const awaitingOthersApproval = status === 'pending_approval' && !canActOnApproval
   const canEdit   = isDraft

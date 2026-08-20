@@ -22,8 +22,9 @@ type EstimateRow = Pick<Estimate,
 > & { client_name: string }
 
 interface EstimatesTableProps {
-  estimates:        EstimateRow[]
-  approvalRequired?: boolean
+  estimates:          EstimateRow[]
+  approvalRequired?:  boolean
+  soleApprover?:      boolean
 }
 
 const TABS: { key: string; label: string; statuses: EstimateStatus[] | null }[] = [
@@ -35,7 +36,7 @@ const TABS: { key: string; label: string; statuses: EstimateStatus[] | null }[] 
   { key: 'declined',         label: 'Declined',      statuses: ['declined', 'expired'] },
 ]
 
-export function EstimatesTable({ estimates, approvalRequired = false }: EstimatesTableProps) {
+export function EstimatesTable({ estimates, approvalRequired = false, soleApprover = false }: EstimatesTableProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('all')
   const [isPending, startTransition] = useTransition()
@@ -124,7 +125,7 @@ export function EstimatesTable({ estimates, approvalRequired = false }: Estimate
                           <Link href={`/estimates/${est.id}`}><Eye className="h-3.5 w-3.5" /></Link>
                         </Button>
 
-                        {est.status === 'draft' && !approvalRequired && (
+                        {est.status === 'draft' && (!approvalRequired || soleApprover) && (
                           <>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={`/estimates/${est.id}/edit`}><Pencil className="h-3.5 w-3.5" /></Link>

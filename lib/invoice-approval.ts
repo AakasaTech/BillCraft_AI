@@ -26,3 +26,19 @@ export async function approvalGateActive(orgId: string, supabase: any): Promise<
 
   return (count ?? 0) > 0
 }
+
+// Returns the number of designated approvers in an org. Used to decide whether
+// a document needs a separate reviewer: when there's only one approver (and
+// they're the creator), the approval flow auto-clears so documents don't get
+// stuck awaiting approval.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getApproverCount(orgId: string, supabase: any): Promise<number> {
+  const { count } = await supabase
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .eq('is_invoice_approver', true)
+    .is('deleted_at', null)
+
+  return count ?? 0
+}

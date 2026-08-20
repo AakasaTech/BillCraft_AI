@@ -24,8 +24,9 @@ type ProformaRow = Pick<Proforma,
 > & { client_name: string }
 
 interface ProformasTableProps {
-  proformas:        ProformaRow[]
-  approvalRequired?: boolean
+  proformas:          ProformaRow[]
+  approvalRequired?:  boolean
+  soleApprover?:      boolean
 }
 
 const TABS: { key: string; label: string; statuses: ProformaStatus[] | null }[] = [
@@ -38,7 +39,7 @@ const TABS: { key: string; label: string; statuses: ProformaStatus[] | null }[] 
   { key: 'expired',          label: 'Expired',       statuses: ['expired'] },
 ]
 
-export function ProformasTable({ proformas, approvalRequired = false }: ProformasTableProps) {
+export function ProformasTable({ proformas, approvalRequired = false, soleApprover = false }: ProformasTableProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('all')
   const [isPending, startTransition] = useTransition()
@@ -135,7 +136,7 @@ export function ProformasTable({ proformas, approvalRequired = false }: Proforma
                           <Link href={`/proformas/${pf.id}`}><Eye className="h-3.5 w-3.5" /></Link>
                         </Button>
 
-                        {pf.status === 'draft' && !approvalRequired && (
+                        {pf.status === 'draft' && (!approvalRequired || soleApprover) && (
                           <>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={`/proformas/${pf.id}/edit`}><Pencil className="h-3.5 w-3.5" /></Link>

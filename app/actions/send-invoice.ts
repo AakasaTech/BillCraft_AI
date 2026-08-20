@@ -7,7 +7,7 @@ import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildInvoiceEmail } from '@/lib/email/invoice-template'
 import { substituteVars } from '@/lib/email/template-renderer'
-import { approvalGateActive } from '@/lib/invoice-approval'
+import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
 import type { Invoice, InvoiceItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
@@ -59,7 +59,21 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
   if (!client?.email) return { error: 'Client has no email address. Add one in the client settings.' }
 
   if (inv.status === 'draft' && await approvalGateActive(orgId, supabase) && !inv.approved_at) {
-    return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
+    // Sole-approver org: no separate reviewer exists, so auto-approve on send.
+    const approverCount = await getApproverCount(orgId, supabase)
+    if (approverCount === 1) {
+      await supabase
+        .from('invoices')
+        .update({
+          status:      'draft',
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('organization_id', orgId)
+    } else {
+      return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
+    }
   }
 
   let clientSubunit: ClientSubunit | null = null

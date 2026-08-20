@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { approvalGateActive } from '@/lib/invoice-approval'
+import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
 import { EstimateDetailView } from '@/components/estimates/estimate-detail-view'
 import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
 
@@ -18,8 +18,9 @@ export default async function EstimateDetailPage({ params }: { params: Promise<{
 
   const orgId = userRecord.organization_id
 
-  const [approvalRequired, [{ data: estimateRaw }, { data: itemsRaw }, { data: org }]] = await Promise.all([
+  const [approvalRequired, approverCount, [{ data: estimateRaw }, { data: itemsRaw }, { data: org }]] = await Promise.all([
     approvalGateActive(orgId, supabase),
+    getApproverCount(orgId, supabase),
     Promise.all([
       supabase
         .from('estimates')
@@ -67,6 +68,7 @@ export default async function EstimateDetailPage({ params }: { params: Promise<{
       approvalRequired={approvalRequired}
       canApprove={userRecord.is_invoice_approver === true}
       isCreator={estimate.created_by === user.id}
+      isSoleApprover={approvalRequired && approverCount === 1}
     />
   )
 }

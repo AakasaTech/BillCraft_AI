@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { invoiceFormSchema, type InvoiceFormData } from '@/lib/validations/invoices'
 import { getPlanStatus, TRIAL_INVOICE_MONTHLY_LIMIT } from '@/lib/subscription'
-import { approvalGateActive } from '@/lib/invoice-approval'
+import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type { AuditAction } from '@/types/database'
 
@@ -189,8 +189,23 @@ export async function updateInvoiceStatusAction(id: string, status: string): Pro
 
   if (status === 'sent' && await approvalGateActive(ctx.orgId, ctx.supabase)) {
     const { data: inv } = await ctx.supabase.from('invoices').select('approved_at').eq('id', id).single()
+    // Sole-approver orgs never need a separate reviewer: if not yet approved,
+    // auto-approve (the creator is the only approver) so the send can proceed.
     if (!inv?.approved_at) {
-      return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
+      const approverCount = await getApproverCount(ctx.orgId, ctx.supabase)
+      if (approverCount === 1) {
+        await ctx.supabase
+          .from('invoices')
+          .update({
+            status:      'draft',
+            approved_by: ctx.userId,
+            approved_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .eq('organization_id', ctx.orgId)
+      } else {
+        return { error: 'This invoice must be approved before it can be sent. Submit it for approval first.' }
+      }
     }
   }
 
