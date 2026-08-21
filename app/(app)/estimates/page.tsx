@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { PlusIcon } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import { EstimatesTable } from '@/components/estimates/estimates-table'
 import { Button } from '@/components/ui/button'
 import type { Estimate, EstimateStatus } from '@/types/database'
@@ -18,19 +18,19 @@ export default async function EstimatesPage() {
     .from('users').select('*').eq('id', user.id).single()
   if (!userRecord?.organization_id) redirect('/onboard')
 
-  const [approvalRequired, approverCount] = await Promise.all([
+  const [approvalRequired, soleApprover] = await Promise.all([
     approvalGateActive(userRecord.organization_id, supabase),
-    getApproverCount(userRecord.organization_id, supabase),
+    isSoleApprover(userRecord.organization_id, user.id, supabase),
   ])
 
   const { data: estimatesRawResult } = await supabase
     .from('estimates')
-    .select('id, estimate_number, status, total, currency, issue_date, expiry_date, share_token, clients(name)')
+    .select('id, estimate_number, status, total, currency, issue_date, expiry_date, share_token, approved_at, clients(name)')
     .eq('organization_id', userRecord.organization_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  type EstimateWithClient = { id: string; estimate_number: string; status: string; total: number; currency: string; issue_date: string; expiry_date: string | null; share_token: string | null; clients: { name: string } | null }
+  type EstimateWithClient = { id: string; estimate_number: string; status: string; total: number; currency: string; issue_date: string; expiry_date: string | null; share_token: string | null; approved_at: string | null; clients: { name: string } | null }
   const estimatesRaw = estimatesRawResult as EstimateWithClient[] | null
 
   const estimates = (estimatesRaw ?? []).map(e => ({
@@ -42,6 +42,7 @@ export default async function EstimatesPage() {
     issue_date:      e.issue_date,
     expiry_date:     e.expiry_date,
     share_token:     e.share_token,
+    approved_at:     e.approved_at,
     client_name:     e.clients?.name ?? '—',
   }))
 
@@ -61,7 +62,7 @@ export default async function EstimatesPage() {
         </Button>
       </div>
 
-      <EstimatesTable estimates={estimates} approvalRequired={approvalRequired} soleApprover={approvalRequired && approverCount === 1} />
+      <EstimatesTable estimates={estimates} approvalRequired={approvalRequired} soleApprover={approvalRequired && soleApprover} />
     </div>
   )
 }

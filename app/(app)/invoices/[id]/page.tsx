@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getPlanStatus } from '@/lib/subscription'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { InvoiceActions } from '@/components/invoices/invoice-actions'
 import { InvoiceTimeline } from '@/components/invoices/invoice-timeline'
@@ -29,10 +29,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const orgId = userRecord.organization_id
 
-  const [plan, approvalRequired, approverCount, [{ data: invoice }, { data: itemsRaw }, { data: emailsRaw }, { data: paymentsRaw }]] = await Promise.all([
+  const [plan, approvalRequired, soleApprover, [{ data: invoice }, { data: itemsRaw }, { data: emailsRaw }, { data: paymentsRaw }]] = await Promise.all([
     getPlanStatus(orgId, supabase),
     approvalGateActive(orgId, supabase),
-    getApproverCount(orgId, supabase),
+    isSoleApprover(orgId, user.id, supabase),
     Promise.all([
     supabase
       .from('invoices')
@@ -94,7 +94,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           approvalRequired={approvalRequired}
           canApprove={userRecord.is_invoice_approver === true}
           isCreator={inv.created_by === user.id}
-          isSoleApprover={approvalRequired && approverCount === 1}
+          isSoleApprover={approvalRequired && soleApprover}
+          isApproved={!!inv.approved_at}
           rejectionNote={inv.rejection_note}
         />
       </div>

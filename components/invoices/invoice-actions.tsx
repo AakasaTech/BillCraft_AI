@@ -34,12 +34,13 @@ interface InvoiceActionsProps {
   canApprove?:       boolean
   isCreator?:        boolean
   isSoleApprover?:   boolean
+  isApproved?:       boolean
   rejectionNote?:    string | null
 }
 
 export function InvoiceActions({
   invoiceId, status, clientEmail, amountDue, currency, shareToken, canUseAI = false,
-  approvalRequired = false, canApprove = false, isCreator = false, isSoleApprover = false, rejectionNote,
+  approvalRequired = false, canApprove = false, isCreator = false, isSoleApprover = false, isApproved = false, rejectionNote,
 }: InvoiceActionsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -111,8 +112,10 @@ export function InvoiceActions({
   const isDraft         = status === 'draft'
   // Sole-approver orgs don't need a separate reviewer: drafts are sendable
   // directly (the send auto-approves), so "Submit for approval" is hidden.
-  const draftSendable   = isDraft && (!approvalRequired || isSoleApprover)
-  const canSubmit       = isDraft && approvalRequired && !isSoleApprover
+  // A draft that already cleared review (isApproved) is likewise sendable —
+  // an approved invoice must never fall back to "Submit for approval".
+  const draftSendable   = isDraft && (!approvalRequired || isSoleApprover || isApproved)
+  const canSubmit       = isDraft && approvalRequired && !isSoleApprover && !isApproved
   const canActOnApproval = status === 'pending_approval' && canApprove && !isCreator
   const awaitingOthersApproval = status === 'pending_approval' && !canActOnApproval
 
@@ -127,6 +130,12 @@ export function InvoiceActions({
 
   return (
     <div className="flex flex-col items-end gap-2">
+      {isDraft && isApproved && (
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-sm text-green-700">
+          <ThumbsUp className="h-3.5 w-3.5" /> Approved — ready to send
+        </span>
+      )}
+
       {isDraft && rejectionNote && (
         <div className="w-full rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           <span className="font-medium">Rejected: </span>{rejectionNote}

@@ -10,7 +10,7 @@ import { buildEstimateEmail } from '@/lib/email/estimate-template'
 import { substituteVars } from '@/lib/email/template-renderer'
 import { estimateFormSchema, type EstimateFormData } from '@/lib/validations/estimates'
 import { convertEstimateToProformaAction } from '@/app/actions/proformas'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type { AuditAction } from '@/types/database'
 import type { Estimate, EstimateItem, Client, ClientSubunit, Organization } from '@/types/database'
@@ -228,8 +228,7 @@ export async function sendEstimateEmailAction(id: string): Promise<ActionResult>
   const estimate = estimateRaw as Estimate & { clients: Client | null }
   if (estimate.status === 'draft' && await approvalGateActive(ctx.orgId, ctx.supabase) && !estimate.approved_at) {
     // Sole-approver org: no separate reviewer exists, so auto-approve on send.
-    const approverCount = await getApproverCount(ctx.orgId, ctx.supabase)
-    if (approverCount === 1) {
+    if (await isSoleApprover(ctx.orgId, ctx.userId, ctx.supabase)) {
       await ctx.supabase
         .from('estimates')
         .update({
@@ -363,17 +362,10 @@ export async function submitEstimateForApprovalAction(id: string): Promise<Actio
     return { error: 'Approval workflow is not available.' }
   }
 
-  // Auto-approve if the submitter is the only approver in the org.
-  const { count: approverCount } = await ctx.supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', ctx.orgId)
-    .eq('is_invoice_approver', true)
-    .is('deleted_at', null)
+  // Auto-approve if the submitter is the org's only designated approver.
+  const soleApprover = await isSoleApprover(ctx.orgId, ctx.userId, ctx.supabase)
 
-  const isSoleApprover = (approverCount ?? 0) === 1
-
-  if (isSoleApprover) {
+  if (soleApprover) {
     // Auto-approve: set to draft with approved_by/approved_at so it can be sent immediately.
     const { error } = await ctx.supabase
       .from('estimates')

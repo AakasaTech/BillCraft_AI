@@ -42,3 +42,21 @@ export async function getApproverCount(orgId: string, supabase: any): Promise<nu
 
   return count ?? 0
 }
+
+// Whether `userId` should skip the review step entirely: they must be the
+// org's *only* designated approver, otherwise a document they submit sits
+// in pending_approval for a genuinely separate reviewer — even if the
+// submitter also happens to hold the approver flag (multi-approver orgs
+// always keep the submit-for-approval step, per maker-checker).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function isSoleApprover(orgId: string, userId: string, supabase: any): Promise<boolean> {
+  const { data: approvers } = await supabase
+    .from('users')
+    .select('id')
+    .eq('organization_id', orgId)
+    .eq('is_invoice_approver', true)
+    .is('deleted_at', null)
+    .limit(2)
+
+  return (approvers?.length ?? 0) === 1 && approvers[0].id === userId
+}

@@ -20,7 +20,7 @@ import type { Proforma, ProformaStatus } from '@/types/database'
 
 type ProformaRow = Pick<Proforma,
   'id' | 'proforma_number' | 'status' | 'total' | 'currency' |
-  'issue_date' | 'expiry_date' | 'share_token'
+  'issue_date' | 'expiry_date' | 'share_token' | 'approved_at'
 > & { client_name: string }
 
 interface ProformasTableProps {
@@ -136,7 +136,7 @@ export function ProformasTable({ proformas, approvalRequired = false, soleApprov
                           <Link href={`/proformas/${pf.id}`}><Eye className="h-3.5 w-3.5" /></Link>
                         </Button>
 
-                        {pf.status === 'draft' && (!approvalRequired || soleApprover) && (
+                        {pf.status === 'draft' && (!approvalRequired || soleApprover || !!pf.approved_at) && (
                           <>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={`/proformas/${pf.id}/edit`}><Pencil className="h-3.5 w-3.5" /></Link>

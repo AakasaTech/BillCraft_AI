@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { invoiceFormSchema, type InvoiceFormData } from '@/lib/validations/invoices'
 import { getPlanStatus, TRIAL_INVOICE_MONTHLY_LIMIT } from '@/lib/subscription'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type { AuditAction } from '@/types/database'
 
@@ -190,10 +190,9 @@ export async function updateInvoiceStatusAction(id: string, status: string): Pro
   if (status === 'sent' && await approvalGateActive(ctx.orgId, ctx.supabase)) {
     const { data: inv } = await ctx.supabase.from('invoices').select('approved_at').eq('id', id).single()
     // Sole-approver orgs never need a separate reviewer: if not yet approved,
-    // auto-approve (the creator is the only approver) so the send can proceed.
+    // auto-approve (the sender is the only approver) so the send can proceed.
     if (!inv?.approved_at) {
-      const approverCount = await getApproverCount(ctx.orgId, ctx.supabase)
-      if (approverCount === 1) {
+      if (await isSoleApprover(ctx.orgId, ctx.userId, ctx.supabase)) {
         await ctx.supabase
           .from('invoices')
           .update({
@@ -269,19 +268,14 @@ export async function submitForApprovalAction(id: string): Promise<ActionResult>
     return { error: 'Approval workflow is not available for your plan.' }
   }
 
-  // Auto-approve if the submitter is the only approver in the org.
+  // Auto-approve if the submitter is the org's only designated approver.
   // This prevents a single-approver org from getting stuck in pending_approval
   // because the creator cannot approve their own document (maker-checker).
-  const { count: approverCount } = await ctx.supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', ctx.orgId)
-    .eq('is_invoice_approver', true)
-    .is('deleted_at', null)
+  // Orgs with 2+ approvers always go through the normal review, even if the
+  // submitter happens to hold the approver flag themselves.
+  const soleApprover = await isSoleApprover(ctx.orgId, ctx.userId, ctx.supabase)
 
-  const isSoleApprover = (approverCount ?? 0) === 1
-
-  if (isSoleApprover) {
+  if (soleApprover) {
     // Auto-approve: set to draft with approved_by/approved_at so it can be sent immediately.
     const { error } = await ctx.supabase
       .from('invoices')

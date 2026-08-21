@@ -7,7 +7,7 @@ import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildInvoiceEmail } from '@/lib/email/invoice-template'
 import { substituteVars } from '@/lib/email/template-renderer'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import type { Invoice, InvoiceItem, Client, ClientSubunit, Organization } from '@/types/database'
 
 type ActionResult = { error?: string; success?: boolean }
@@ -60,8 +60,7 @@ export async function sendInvoiceEmailAction(id: string): Promise<ActionResult> 
 
   if (inv.status === 'draft' && await approvalGateActive(orgId, supabase) && !inv.approved_at) {
     // Sole-approver org: no separate reviewer exists, so auto-approve on send.
-    const approverCount = await getApproverCount(orgId, supabase)
-    if (approverCount === 1) {
+    if (await isSoleApprover(orgId, user.id, supabase)) {
       await supabase
         .from('invoices')
         .update({

@@ -9,7 +9,7 @@ import { isEmailConfigured, resolveFromAddress } from '@/lib/email/mailer'
 import { sendClientFacingEmail } from '@/lib/email/org-mailer'
 import { buildProformaEmail } from '@/lib/email/proforma-template'
 import { proformaFormSchema, type ProformaFormData } from '@/lib/validations/proformas'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import { logAudit } from '@/lib/audit'
 import type {
   Proforma, ProformaItem, Estimate, EstimateItem, Client, ClientSubunit, Organization,
@@ -526,8 +526,7 @@ export async function sendProformaEmailAction(id: string): Promise<ActionResult>
   const proforma = proformaRaw as Proforma & { clients: Client | null }
   if (proforma.status === 'draft' && await approvalGateActive(ctx.orgId, ctx.supabase) && !proforma.approved_at) {
     // Sole-approver org: no separate reviewer exists, so auto-approve on send.
-    const approverCount = await getApproverCount(ctx.orgId, ctx.supabase)
-    if (approverCount === 1) {
+    if (await isSoleApprover(ctx.orgId, ctx.userId, ctx.supabase)) {
       await ctx.supabase
         .from('proformas')
         .update({
@@ -637,17 +636,10 @@ export async function submitProformaForApprovalAction(id: string): Promise<Actio
     return { error: 'Approval workflow is not available.' }
   }
 
-  // Auto-approve if the submitter is the only approver in the org.
-  const { count: approverCount } = await ctx.supabase
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', ctx.orgId)
-    .eq('is_invoice_approver', true)
-    .is('deleted_at', null)
+  // Auto-approve if the submitter is the org's only designated approver.
+  const soleApprover = await isSoleApprover(ctx.orgId, ctx.userId, ctx.supabase)
 
-  const isSoleApprover = (approverCount ?? 0) === 1
-
-  if (isSoleApprover) {
+  if (soleApprover) {
     // Auto-approve: set to draft with approved_by/approved_at so it can be sent immediately.
     const { error } = await ctx.supabase
       .from('proformas')

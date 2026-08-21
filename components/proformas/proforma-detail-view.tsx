@@ -35,11 +35,12 @@ interface ProformaDetailViewProps {
   canApprove?:       boolean
   isCreator?:        boolean
   isSoleApprover?:   boolean
+  isApproved?:       boolean
 }
 
 export function ProformaDetailView({
   proforma, items, client, clientSubunit, org,
-  approvalRequired = false, canApprove = false, isCreator = false, isSoleApprover = false,
+  approvalRequired = false, canApprove = false, isCreator = false, isSoleApprover = false, isApproved = false,
 }: ProformaDetailViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -95,8 +96,10 @@ export function ProformaDetailView({
   const isDraft                = status === 'draft'
   // Sole-approver orgs don't need a separate reviewer: drafts are sendable
   // directly (the send auto-approves), so "Submit for approval" is hidden.
-  const draftSendable          = isDraft && (!approvalRequired || isSoleApprover)
-  const canSubmit              = isDraft && approvalRequired && !isSoleApprover
+  // A draft that already cleared review (isApproved) is likewise sendable —
+  // an approved proforma must never fall back to "Submit for approval".
+  const draftSendable          = isDraft && (!approvalRequired || isSoleApprover || isApproved)
+  const canSubmit              = isDraft && approvalRequired && !isSoleApprover && !isApproved
   const canActOnApproval       = status === 'pending_approval' && canApprove && !isCreator
   const awaitingOthersApproval = status === 'pending_approval' && !canActOnApproval
   const canEdit   = isDraft
@@ -124,6 +127,12 @@ export function ProformaDetailView({
         </div>
 
         {/* Actions */}
+        <div className="flex flex-col items-end gap-2">
+        {isDraft && isApproved && (
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-sm text-green-700">
+            <ThumbsUp className="h-3.5 w-3.5" /> Approved — ready to send
+          </span>
+        )}
         <div className="flex flex-wrap gap-2">
           {proforma.share_token && (
             <Button variant="outline" size="sm" asChild>
@@ -223,6 +232,7 @@ export function ProformaDetailView({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
         </div>
       </div>
 

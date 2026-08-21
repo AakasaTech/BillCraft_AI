@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { approvalGateActive, getApproverCount } from '@/lib/invoice-approval'
+import { approvalGateActive, isSoleApprover } from '@/lib/invoice-approval'
 import { ProformaDetailView } from '@/components/proformas/proforma-detail-view'
 import type { Proforma, ProformaItem, Client, ClientSubunit, Organization } from '@/types/database'
 
@@ -18,9 +18,9 @@ export default async function ProformaDetailPage({ params }: { params: Promise<{
 
   const orgId = userRecord.organization_id
 
-  const [approvalRequired, approverCount, [{ data: proformaRaw }, { data: itemsRaw }, { data: org }]] = await Promise.all([
+  const [approvalRequired, soleApprover, [{ data: proformaRaw }, { data: itemsRaw }, { data: org }]] = await Promise.all([
     approvalGateActive(orgId, supabase),
-    getApproverCount(orgId, supabase),
+    isSoleApprover(orgId, user.id, supabase),
     Promise.all([
       supabase
         .from('proformas')
@@ -68,7 +68,8 @@ export default async function ProformaDetailPage({ params }: { params: Promise<{
       approvalRequired={approvalRequired}
       canApprove={userRecord.is_invoice_approver === true}
       isCreator={proforma.created_by === user.id}
-      isSoleApprover={approvalRequired && approverCount === 1}
+      isSoleApprover={approvalRequired && soleApprover}
+      isApproved={!!proforma.approved_at}
     />
   )
 }

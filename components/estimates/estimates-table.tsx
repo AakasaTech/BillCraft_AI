@@ -18,7 +18,7 @@ import type { Estimate, EstimateStatus } from '@/types/database'
 
 type EstimateRow = Pick<Estimate,
   'id' | 'estimate_number' | 'status' | 'total' | 'currency' |
-  'issue_date' | 'expiry_date' | 'share_token'
+  'issue_date' | 'expiry_date' | 'share_token' | 'approved_at'
 > & { client_name: string }
 
 interface EstimatesTableProps {
@@ -125,7 +125,7 @@ export function EstimatesTable({ estimates, approvalRequired = false, soleApprov
                           <Link href={`/estimates/${est.id}`}><Eye className="h-3.5 w-3.5" /></Link>
                         </Button>
 
-                        {est.status === 'draft' && (!approvalRequired || soleApprover) && (
+                        {est.status === 'draft' && (!approvalRequired || soleApprover || !!est.approved_at) && (
                           <>
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                               <Link href={`/estimates/${est.id}/edit`}><Pencil className="h-3.5 w-3.5" /></Link>
